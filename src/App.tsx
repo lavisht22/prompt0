@@ -6,6 +6,7 @@ import Home from "./routes/home";
 import SignInPage from "./routes/(auth)/sign-in/page";
 import SignUpPage from "./routes/(auth)/sign-up/page";
 import AuthLayout from "./routes/(auth)/layout";
+import { Toaster } from "react-hot-toast";
 
 const router = createBrowserRouter([
   {
@@ -28,7 +29,12 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <Toaster />
+    </>
+  );
 }
 
 export default App;

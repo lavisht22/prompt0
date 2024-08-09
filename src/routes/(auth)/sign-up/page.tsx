@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 
 import { z } from "zod";
 import supabase from "../../../utils/supabase";
+import toast from "react-hot-toast";
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -15,9 +16,8 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function SignUpPage() {
-  const [error, setError] = useState<string | null>(
-    "This is a test error. Not a real life error!"
-  );
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const { handleSubmit, control } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
@@ -29,14 +29,18 @@ export default function SignUpPage() {
 
   const signup = useCallback(async ({ email, password }: FormValues) => {
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      setLoading(true);
+      const { error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
         throw error;
       }
-      console.log(data);
-    } catch (error) {
-      setError(error.message);
+
+      setSuccess(true);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -46,52 +50,66 @@ export default function SignUpPage() {
         <h3 className="text-3xl font-medium">Get started</h3>
         <h2>Create a new account</h2>
       </div>
-      <form className="space-y-10" onSubmit={handleSubmit(signup)}>
-        <Controller
-          name="email"
-          control={control}
-          render={({ field, fieldState }) => (
-            <Input
-              variant="bordered"
-              label="Email"
-              labelPlacement="outside"
-              placeholder="you@example.com"
-              autoComplete="email"
-              errorMessage={fieldState.error?.message}
-              isInvalid={fieldState.invalid}
-              {...field}
+      {success ? (
+        <div className="space-y-8">
+          <p>
+            We've sent you an email to verify your account. Please check your
+            inbox and click the link to activate your account.
+          </p>
+        </div>
+      ) : (
+        <>
+          <form className="space-y-10" onSubmit={handleSubmit(signup)}>
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  variant="bordered"
+                  label="Email"
+                  labelPlacement="outside"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  errorMessage={fieldState.error?.message}
+                  isInvalid={fieldState.invalid}
+                  {...field}
+                />
+              )}
             />
-          )}
-        />
-        <Controller
-          name="password"
-          control={control}
-          render={({ field, fieldState }) => (
-            <Input
-              variant="bordered"
-              label="Password"
-              labelPlacement="outside"
-              type="password"
-              placeholder="••••••••••••••"
-              autoComplete="new-password"
-              errorMessage={fieldState.error?.message}
-              isInvalid={fieldState.invalid}
-              {...field}
+            <Controller
+              name="password"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  variant="bordered"
+                  label="Password"
+                  labelPlacement="outside"
+                  type="password"
+                  placeholder="••••••••••••••"
+                  autoComplete="new-password"
+                  errorMessage={fieldState.error?.message}
+                  isInvalid={fieldState.invalid}
+                  {...field}
+                />
+              )}
             />
-          )}
-        />
-        <Button type="submit" color="primary" className="w-full">
-          Sign Up
-        </Button>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-      </form>
-
-      <p className="text-sm text-center">
-        Have an account?{" "}
-        <Link className="underline" to="/sign-in">
-          Sign In Now
-        </Link>
-      </p>
+            <Button
+              type="submit"
+              color="primary"
+              className="w-full"
+              isLoading={loading}
+            >
+              Sign Up
+            </Button>
+          </form>
+          <p className="text-sm text-center">
+            Have an account?{" "}
+            <Link className="underline" to="/sign-in">
+              Sign In Now
+            </Link>
+          </p>
+        </>
+      )}
     </div>
   );
 }
