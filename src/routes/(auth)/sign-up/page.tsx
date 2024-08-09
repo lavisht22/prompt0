@@ -45,7 +45,7 @@ export default function SignUpPage() {
   }, []);
 
   return (
-    <div className="flex flex-col w-full max-w-lg space-y-8">
+    <div className="flex flex-col w-full max-w-sm space-y-8">
       <div>
         <h3 className="text-3xl font-medium">Get started</h3>
         <h2>Create a new account</h2>
