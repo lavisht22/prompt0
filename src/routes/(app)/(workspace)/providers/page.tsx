@@ -1,34 +1,83 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import supabase from "../../../../utils/supabase";
-
-type Prompt = {
-  id: string;
-  slug: string;
-};
+import useWorkspacesStore from "../../../../stores/workspaces";
+import useProvidersStore from "../../../../stores/providers";
+import toast from "react-hot-toast";
+import { Avatar, Button, Card, CardBody, Input } from "@nextui-org/react";
+import { LuPlus, LuSearch } from "react-icons/lu";
 
 export default function ProvidersPage() {
-  const [loading, setLoading] = useState(true);
-  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const { activeWorkspace } = useWorkspacesStore();
+  const { providers, setProviders } = useProvidersStore();
 
   const load = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!activeWorkspace) {
+        return;
+      }
 
-      const { data, error } = await supabase.from("providers").select("id");
+      const { data, error } = await supabase
+        .from("providers")
+        .select("*")
+        .eq("workspace_id", activeWorkspace.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setProviders(data);
     } catch {
-    } finally {
-      setLoading(false);
+      toast.error("Oops! Something went wrong.");
     }
-  }, []);
+  }, [activeWorkspace, setProviders]);
 
-  useEffect(() => {}, []);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div className="h-full">
-      <div className="flex items-center bg-background px-4 h-12 border-b">
-        <h2 className="font-semibold">Providers</h2>
+      <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
+        <div className="flex items-center space-x-2">
+          <h2 className="font-semibold">Providers</h2>
+        </div>
+
+        <Button size="sm" color="primary" startContent={<LuPlus />}>
+          Add
+        </Button>
       </div>
-      <div className="h-full overflow-y-auto"></div>
+      <div className="h-full overflow-y-auto">
+        <Input
+          variant="flat"
+          className="bg-background"
+          classNames={{
+            inputWrapper: "bg-background border-b px-6",
+          }}
+          radius="none"
+          aria-label="Search"
+          startContent={<LuSearch />}
+          placeholder="Search"
+        />
+
+        {providers.map((provider) => (
+          <Card
+            isHoverable
+            key={provider.id}
+            radius="none"
+            className="w-full shadow-none"
+            isPressable
+          >
+            <CardBody className="flex flex-row justify-between items-center px-6 py-4">
+              <div className="flex items-center space-x-3">
+                <Avatar size="sm" /> <h4>{provider.name}</h4>
+              </div>
+              <div>
+                <span className="block text-sm text-default-500">Aug 10</span>
+              </div>
+            </CardBody>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

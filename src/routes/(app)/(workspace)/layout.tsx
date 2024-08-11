@@ -3,9 +3,9 @@ import { Outlet, useParams } from "react-router-dom";
 import Sidebar from "./components/sidebar";
 import { useEffect } from "react";
 import useWorkspaceStore from "../../../stores/workspaces";
-import { Spinner } from "@nextui-org/react";
 import supabase from "../../../utils/supabase";
 import toast from "react-hot-toast";
+import SplashScreen from "../../../components/splash-screen";
 
 export default function WorkspaceLayout() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
@@ -45,11 +45,7 @@ export default function WorkspaceLayout() {
   }, [setWorkspaces, workspaces, workspaceSlug, setActiveWorkspace]);
 
   if (!activeWorkspace) {
-    return (
-      <div className="w-screen h-screen bg-default-100 flex justify-center items-center">
-        <Spinner />
-      </div>
-    );
+    return <SplashScreen loading />;
   }
 
   return (
