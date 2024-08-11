@@ -10,6 +10,7 @@ import { Toaster } from "react-hot-toast";
 import AppLayout from "./routes/(app)/layout";
 import WorkspaceLayout from "./routes/(app)/(workspace)/layout";
 import PromptsPage from "./routes/(app)/(workspace)/prompts/page";
+import ProvidersPage from "./routes/(app)/(workspace)/providers/page";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
           {
             path: "prompts",
             element: <PromptsPage />,
+          },
+          {
+            path: "providers",
+            element: <ProvidersPage />,
           },
           {
             path: "logs",
