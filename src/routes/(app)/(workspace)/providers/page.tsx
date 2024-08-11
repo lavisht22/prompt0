@@ -5,10 +5,11 @@ import useProvidersStore from "../../../../stores/providers";
 import toast from "react-hot-toast";
 import { Avatar, Button, Card, CardBody, Input } from "@nextui-org/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
+import ProviderModal from "./components/provider-modal";
 
 export default function ProvidersPage() {
   const { activeWorkspace } = useWorkspacesStore();
-  const { providers, setProviders } = useProvidersStore();
+  const { providers, setProviders, setActiveProvider } = useProvidersStore();
 
   const load = useCallback(async () => {
     try {
@@ -35,6 +36,19 @@ export default function ProvidersPage() {
     load();
   }, [load]);
 
+  const test = useCallback(async () => {
+    console.log("test", Date.now());
+
+    const { data } = await supabase.functions.invoke("run", {
+      body: {
+        prompt_id: "62576608-ea9f-4fe8-bbba-e9042a533ce3",
+        time: Date.now(),
+      },
+    });
+
+    console.log("DATA", data);
+  }, []);
+
   return (
     <div className="h-full">
       <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
@@ -42,7 +56,12 @@ export default function ProvidersPage() {
           <h2 className="font-semibold">Providers</h2>
         </div>
 
-        <Button size="sm" color="primary" startContent={<LuPlus />}>
+        <Button
+          size="sm"
+          color="primary"
+          startContent={<LuPlus />}
+          onPress={test}
+        >
           Add
         </Button>
       </div>
@@ -65,6 +84,7 @@ export default function ProvidersPage() {
             key={provider.id}
             radius="none"
             className="w-full shadow-none"
+            onPress={() => setActiveProvider(provider)}
             isPressable
           >
             <CardBody className="flex flex-row justify-between items-center px-6 py-4">
@@ -78,6 +98,7 @@ export default function ProvidersPage() {
           </Card>
         ))}
       </div>
+      <ProviderModal />
     </div>
   );
 }
