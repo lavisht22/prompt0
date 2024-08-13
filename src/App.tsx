@@ -11,6 +11,7 @@ import AppLayout from "./routes/(app)/layout";
 import WorkspaceLayout from "./routes/(app)/(workspace)/layout";
 import PromptsPage from "./routes/(app)/(workspace)/prompts/page";
 import ProvidersPage from "./routes/(app)/(workspace)/providers/page";
+import PromptDetailsPage from "routes/(app)/(workspace)/prompt-details/page";
 
 const router = createBrowserRouter([
   {
@@ -21,12 +22,21 @@ const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: ":workspaceSlug/",
+        path: ":workspaceSlug",
         element: <WorkspaceLayout />,
         children: [
           {
             path: "prompts",
-            element: <PromptsPage />,
+            children: [
+              {
+                index: true,
+                element: <PromptsPage />,
+              },
+              {
+                path: ":promptId/",
+                element: <PromptDetailsPage />,
+              },
+            ],
           },
           {
             path: "providers",
