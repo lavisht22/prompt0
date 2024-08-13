@@ -17,6 +17,8 @@ import useProvidersStore, { Provider } from "stores/providers";
 import OpenAIForm from "./openai-form";
 import toast from "react-hot-toast";
 import supabase from "utils/supabase";
+import { useAuth } from "contexts/auth-context";
+import useWorkspacesStore from "stores/workspaces";
 
 // Functions to mask the key with leving first 4 and last 4 characters
 function maskKey(key: string) {
@@ -24,6 +26,8 @@ function maskKey(key: string) {
 }
 
 export default function ProviderModal() {
+  const { session } = useAuth();
+  const { activeWorkspace } = useWorkspacesStore();
   const { activeProvider, setActiveProvider, setProviders, providers } =
     useProvidersStore();
 
@@ -47,12 +51,47 @@ export default function ProviderModal() {
     try {
       if (!provider) return;
 
-      setLoading(true);
-      if (provider.id === "new") {
-        // TODO: Create new provider
-      } else {
-        console.log("OPTIONS", provider.options);
+      if (!activeWorkspace || !session) {
+        return;
+      }
 
+      setLoading(true);
+
+      if (provider.id === "new") {
+        const key = provider.options["key"];
+
+        if (provider.options["key"]) {
+          provider.options["key"] = maskKey(key);
+        }
+
+        const { data, error } = await supabase
+          .from("providers")
+          .insert({
+            name: provider.name,
+            type: provider.type,
+            options: provider.options,
+            workspace_id: activeWorkspace.id,
+            user_id: session.user.id,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setProviders([
+          { ...data, options: data.options as Provider["options"] },
+          ...providers,
+        ]);
+
+        await supabase
+          .from("keys")
+          .insert({ provider_id: data.id, value: key || "" })
+          .throwOnError();
+
+        setActiveProvider(null);
+      } else {
         if (provider.options["key"]) {
           const key = provider.options["key"];
           provider.options["key"] = maskKey(key);
@@ -89,8 +128,10 @@ export default function ProviderModal() {
     }
   }, [
     activeProvider?.options?.key,
+    activeWorkspace,
     provider,
     providers,
+    session,
     setActiveProvider,
     setProviders,
   ]);

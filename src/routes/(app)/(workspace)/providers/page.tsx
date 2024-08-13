@@ -1,12 +1,12 @@
 import { useCallback, useEffect } from "react";
-import supabase from "../../../../utils/supabase";
-import useWorkspacesStore from "../../../../stores/workspaces";
-import useProvidersStore from "../../../../stores/providers";
+import supabase from "utils/supabase";
+import useWorkspacesStore from "stores/workspaces";
+import useProvidersStore, { Provider } from "stores/providers";
 import toast from "react-hot-toast";
 import { Button, Card, CardBody, Input } from "@nextui-org/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
 import ProviderModal from "./components/provider-modal";
-import ProviderIcon from "../../../../components/provider-icon";
+import ProviderIcon from "components/provider-icon";
 
 export default function ProvidersPage() {
   const { activeWorkspace } = useWorkspacesStore();
@@ -27,7 +27,12 @@ export default function ProvidersPage() {
         throw error;
       }
 
-      setProviders(data);
+      setProviders(
+        data.map((provider) => ({
+          ...provider,
+          options: provider.options as Provider["options"],
+        }))
+      );
     } catch {
       toast.error("Oops! Something went wrong.");
     }
@@ -37,18 +42,18 @@ export default function ProvidersPage() {
     load();
   }, [load]);
 
-  const test = useCallback(async () => {
-    console.log("test", Date.now());
-
-    const { data } = await supabase.functions.invoke("run", {
-      body: {
-        prompt_id: "62576608-ea9f-4fe8-bbba-e9042a533ce3",
-        time: Date.now(),
-      },
+  const add = useCallback(async () => {
+    setActiveProvider({
+      id: "new",
+      workspace_id: "",
+      type: "openai",
+      name: "",
+      options: {},
+      created_at: "",
+      user_id: "",
+      updated_at: "",
     });
-
-    console.log("DATA", data);
-  }, []);
+  }, [setActiveProvider]);
 
   return (
     <div className="h-full">
@@ -61,7 +66,7 @@ export default function ProvidersPage() {
           size="sm"
           color="primary"
           startContent={<LuPlus />}
-          onPress={test}
+          onPress={add}
         >
           Add
         </Button>
