@@ -21,7 +21,8 @@ export default function ProvidersPage() {
       const { data, error } = await supabase
         .from("providers")
         .select("*")
-        .eq("workspace_id", activeWorkspace.id);
+        .eq("workspace_id", activeWorkspace.id)
+        .order("updated_at", { ascending: false });
 
       if (error) {
         throw error;
@@ -95,7 +96,7 @@ export default function ProvidersPage() {
           >
             <CardBody className="flex flex-row justify-between items-center px-6 py-4">
               <div className="flex items-center space-x-3">
-                <ProviderIcon type={provider.type} className="w-6 h-6" />{" "}
+                <ProviderIcon type={provider.type} className="w-6 h-6" />
                 <h4>{provider.name}</h4>
               </div>
               <div>
