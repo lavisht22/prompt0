@@ -10,14 +10,17 @@ import {
   SelectItem,
 } from "@nextui-org/react";
 
-import useProvidersStore from "../../../../../stores/providers";
-import { useCallback } from "react";
-import { Json } from "../../../../../../supabase/types";
+import { useCallback, useState } from "react";
+import ProviderIcon from "components/provider-icon";
+import useProvidersStore, { Provider } from "stores/providers";
+import { Json } from "supabase/types";
+
 import OpenAIForm, { OpenAIOptions } from "./openai-form";
-import ProviderIcon from "../../../../../components/provider-icon";
 
 export default function ProviderModal() {
   const { activeProvider, setActiveProvider } = useProvidersStore();
+
+  const [provider, setProviders] = useState<Provider | null>();
 
   const setOptions = useCallback(
     (options: unknown) => {
@@ -27,6 +30,16 @@ export default function ProviderModal() {
     },
     [activeProvider, setActiveProvider]
   );
+
+  const save = useCallback(() => {
+    if (!activeProvider) return;
+
+    if (activeProvider.id === "new") {
+      // TODO: Create new provider
+    } else {
+      // Determine if the api key has changed
+    }
+  }, []);
 
   if (!activeProvider) return null;
 
