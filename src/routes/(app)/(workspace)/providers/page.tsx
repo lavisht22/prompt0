@@ -3,9 +3,10 @@ import supabase from "../../../../utils/supabase";
 import useWorkspacesStore from "../../../../stores/workspaces";
 import useProvidersStore from "../../../../stores/providers";
 import toast from "react-hot-toast";
-import { Avatar, Button, Card, CardBody, Input } from "@nextui-org/react";
+import { Button, Card, CardBody, Input } from "@nextui-org/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
 import ProviderModal from "./components/provider-modal";
+import ProviderIcon from "../../../../components/provider-icon";
 
 export default function ProvidersPage() {
   const { activeWorkspace } = useWorkspacesStore();
@@ -89,7 +90,8 @@ export default function ProvidersPage() {
           >
             <CardBody className="flex flex-row justify-between items-center px-6 py-4">
               <div className="flex items-center space-x-3">
-                <Avatar size="sm" /> <h4>{provider.name}</h4>
+                <ProviderIcon type={provider.type} className="w-6 h-6" />{" "}
+                <h4>{provider.name}</h4>
               </div>
               <div>
                 <span className="block text-sm text-default-500">Aug 10</span>

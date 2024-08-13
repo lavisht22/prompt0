@@ -9,12 +9,12 @@ import {
   Select,
   SelectItem,
 } from "@nextui-org/react";
-import { SiAnthropic, SiOpenai } from "react-icons/si";
 
 import useProvidersStore from "../../../../../stores/providers";
 import { useCallback } from "react";
 import { Json } from "../../../../../../supabase/types";
 import OpenAIForm, { OpenAIOptions } from "./openai-form";
+import ProviderIcon from "../../../../../components/provider-icon";
 
 export default function ProviderModal() {
   const { activeProvider, setActiveProvider } = useProvidersStore();
@@ -62,13 +62,17 @@ export default function ProviderModal() {
               });
             }}
           >
-            <SelectItem key="openai" value="openai" startContent={<SiOpenai />}>
+            <SelectItem
+              key="openai"
+              value="openai"
+              startContent={<ProviderIcon type="openai" />}
+            >
               OpenAI
             </SelectItem>
             <SelectItem
               key="anthropic"
               value="anthropic"
-              startContent={<SiAnthropic />}
+              startContent={<ProviderIcon type="anthropic" />}
             >
               Anthropic
             </SelectItem>
