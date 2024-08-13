@@ -60,7 +60,7 @@ export default function ProvidersPage() {
     <div className="h-full">
       <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
         <div className="flex items-center space-x-2">
-          <h2 className="font-semibold">Providers</h2>
+          <h2 className="font-medium">Providers</h2>
         </div>
 
         <Button
