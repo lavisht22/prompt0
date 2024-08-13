@@ -62,7 +62,6 @@ export default function ProvidersPage() {
         <div className="flex items-center space-x-2">
           <h2 className="font-medium">Providers</h2>
         </div>
-
         <Button
           size="sm"
           color="primary"

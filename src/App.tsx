@@ -15,10 +15,11 @@ import PromptDetailsPage from "routes/(app)/(workspace)/prompt-details/page";
 
 const router = createBrowserRouter([
   {
+    path: "/",
     element: <AppLayout />,
     children: [
       {
-        path: "/",
+        index: true,
         element: <HomePage />,
       },
       {
@@ -27,16 +28,11 @@ const router = createBrowserRouter([
         children: [
           {
             path: "prompts",
-            children: [
-              {
-                index: true,
-                element: <PromptsPage />,
-              },
-              {
-                path: ":promptId/",
-                element: <PromptDetailsPage />,
-              },
-            ],
+            element: <PromptsPage />,
+          },
+          {
+            path: "prompts/:promptId",
+            element: <PromptDetailsPage />,
           },
           {
             path: "providers",

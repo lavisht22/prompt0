@@ -53,6 +53,7 @@ export default function PromptDetailsPage() {
             Save
           </Button>
         </div>
+        <div className="flex bg-red-300">Tests</div>
       </div>
     </form>
   );

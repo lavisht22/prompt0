@@ -2,6 +2,7 @@ import { Button, Card, CardBody, Input } from "@nextui-org/react";
 import { useCallback, useEffect } from "react";
 import toast from "react-hot-toast";
 import { LuPlus, LuSearch } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
 import usePromptsStore from "stores/prompts";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
@@ -9,6 +10,7 @@ import supabase from "utils/supabase";
 export default function PromptsPage() {
   const { activeWorkspace } = useWorkspacesStore();
   const { prompts, setPrompts } = usePromptsStore();
+  const navigate = useNavigate();
 
   const load = useCallback(async () => {
     try {
@@ -36,6 +38,10 @@ export default function PromptsPage() {
     load();
   }, [load]);
 
+  const create = useCallback(() => {
+    navigate("create");
+  }, [navigate]);
+
   return (
     <div className="h-full">
       <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
@@ -47,7 +53,7 @@ export default function PromptsPage() {
           size="sm"
           color="primary"
           startContent={<LuPlus />}
-          // onPress={add}
+          onPress={create}
         >
           Create
         </Button>
