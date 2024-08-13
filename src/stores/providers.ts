@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { Database } from "../../supabase/types";
 
-export type Provider = Database["public"]["Tables"]["providers"]["Row"];
+export type Provider =
+    & Omit<Database["public"]["Tables"]["providers"]["Row"], "options">
+    & {
+        options: { [key: string]: string };
+    };
 
 interface ProvidersState {
     providers: Provider[];

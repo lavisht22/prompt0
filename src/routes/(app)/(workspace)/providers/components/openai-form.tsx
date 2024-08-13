@@ -1,23 +1,20 @@
 import { Input } from "@nextui-org/react";
-
-export type OpenAIOptions = {
-  api_key?: string;
-};
+import { Provider } from "stores/providers";
 
 export default function OpenAIForm({
   options,
   setOptions,
 }: {
-  options: OpenAIOptions;
-  setOptions: (options: OpenAIOptions) => void;
+  options: Provider["options"];
+  setOptions: (options: Provider["options"]) => void;
 }) {
   return (
     <>
       <Input
         variant="bordered"
         label="API Key"
-        value={options?.api_key}
-        onValueChange={(api_key) => setOptions({ ...options, api_key })}
+        value={options?.key}
+        onValueChange={(key) => setOptions({ ...options, key })}
       />
     </>
   );
