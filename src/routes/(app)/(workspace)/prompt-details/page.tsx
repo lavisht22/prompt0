@@ -3,9 +3,17 @@ import { Button, Input } from "@nextui-org/react";
 import { Controller, useForm } from "react-hook-form";
 import { LuSave } from "react-icons/lu";
 import { z } from "zod";
+import System from "./components/system";
+
+const MessageSchema = z.object({
+  role: z.enum(["system", "assistant"]),
+  content: z.string(),
+});
 
 const FormSchema = z.object({
   name: z.string().min(2, "Name is too short."),
+  system: z.string(),
+  messages: z.array(MessageSchema),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
@@ -15,12 +23,13 @@ export default function PromptDetailsPage() {
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: "",
+      system: "",
     },
   });
 
   return (
-    <form onSubmit={handleSubmit(() => {})}>
-      <div className="h-full">
+    <div className="h-full">
+      <form className="h-full flex flex-col" onSubmit={handleSubmit(() => {})}>
         <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
           <div className="flex items-center gap-x-2">
             <h2 className="font-medium">Prompts</h2>
@@ -53,8 +62,24 @@ export default function PromptDetailsPage() {
             Save
           </Button>
         </div>
-        <div className="flex bg-red-300">Tests</div>
-      </div>
-    </form>
+        <div className="flex-1 flex overflow-y-hidden">
+          <div className="flex-1 h-full overflow-y-scroll p-6 space-y-4">
+            <Controller
+              name="system"
+              control={control}
+              render={({ field, fieldState }) => (
+                <System
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  isInvalid={fieldState.invalid}
+                />
+              )}
+            />
+          </div>
+          <div className="bg-green-300 flex-1">2</div>
+          <div className="bg-yellow-200 w-56">3</div>
+        </div>
+      </form>
+    </div>
   );
 }

@@ -42,7 +42,7 @@ export default function WorkspaceLayout() {
     };
 
     init();
-  }, []);
+  }, [setActiveWorkspace, setWorkspaces, workspaceSlug, workspaces.length]);
 
   if (!activeWorkspace) {
     return <SplashScreen loading />;
