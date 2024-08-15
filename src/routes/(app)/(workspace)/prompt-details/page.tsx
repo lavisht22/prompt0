@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { LuPlus, LuSave } from "react-icons/lu";
 import { z } from "zod";
@@ -14,35 +14,54 @@ import { Database } from "supabase/types";
 import toast from "react-hot-toast";
 import { useAuth } from "contexts/auth-context";
 import FullSpinner from "components/full-spinner";
+import useWorkspacesStore from "stores/workspaces";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
+type Provider = {
+  id: string;
+  type: string;
+  name: string;
+};
 
 const MessageSchema = z.union([SystemMessageSchema, UserMessageSchema]);
 
 const FormSchema = z.object({
   name: z.string().min(2, "Name is too short."),
+  provider_id: z.string().uuid().or(z.null()),
   messages: z.array(MessageSchema),
+  params: z.object({
+    temprature: z.number().min(0).max(2),
+    max_tokens: z.number().min(1).max(4095),
+  }),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function PromptDetailsPage() {
   const { session } = useAuth();
+  const { activeWorkspace } = useWorkspacesStore();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
+  const [providers, setProviders] = useState<Provider[]>([]);
 
   const { promptId } = useParams<{ promptId: string }>();
   const { handleSubmit, control, reset } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: "",
+      provider_id: null,
       messages: [
         {
           role: "system",
           content: "",
         },
       ],
+      params: {
+        temprature: 1,
+        max_tokens: 256,
+      },
     },
   });
 
@@ -58,9 +77,20 @@ export default function PromptDetailsPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        if (!promptId) {
+        if (!promptId || !activeWorkspace) {
           return;
         }
+
+        const { data: providers, error: providersReadError } = await supabase
+          .from("providers")
+          .select("id, type, name")
+          .eq("workspace_id", activeWorkspace.id);
+
+        if (providersReadError) {
+          throw providersReadError;
+        }
+
+        setProviders(providers);
 
         if (promptId === "create") {
           return;
@@ -97,8 +127,19 @@ export default function PromptDetailsPage() {
               })
             : {};
 
+        const params = prompt.params as {
+          temprature?: number;
+          max_tokens?: number;
+        };
+
         const payload = {
           name: prompt.name,
+          provider_id: prompt.provider_id,
+          params: {
+            temprature: 1,
+            max_tokens: 256,
+            ...params,
+          },
           messages: [
             {
               role: "system" as const,
@@ -117,11 +158,12 @@ export default function PromptDetailsPage() {
     };
 
     init();
-  }, [promptId, reset]);
+  }, [activeWorkspace, promptId, reset]);
 
   const save = useCallback(
     async (values: FormValues) => {
       try {
+        console.log(values);
         if (!promptId || !session) {
           return;
         }
@@ -138,6 +180,8 @@ export default function PromptDetailsPage() {
           .from("prompts")
           .update({
             name: values.name,
+            provider_id: values.provider_id,
+            params: values.params,
             updated_at: new Date().toISOString(),
           })
           .eq("id", promptId);
@@ -211,8 +255,8 @@ export default function PromptDetailsPage() {
             Save
           </Button>
         </div>
-        <div className="flex-1 flex overflow-y-hidden">
-          <div className="flex-1 h-full overflow-y-auto">
+        <div className="flex-1 flex overflow-y-hidden ">
+          <div className="flex-1 h-full overflow-y-auto border-r">
             {messages.map((field, index) => {
               if (field.role === "system") {
                 return (
@@ -269,8 +313,61 @@ export default function PromptDetailsPage() {
               </Button>
             </div>
           </div>
-          <div className="bg-green-300 flex-1">2</div>
-          <div className="bg-yellow-200 w-56">3</div>
+          <div className="flex-1 border-r">2</div>
+          <div className="w-56 p-3 flex flex-col gap-8">
+            <Controller
+              name="provider_id"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Select
+                  aria-label="Provider"
+                  isInvalid={fieldState.invalid}
+                  selectedKeys={new Set([field.value || ""])}
+                  onSelectionChange={(selectedKeys) => {
+                    const arr = Array.from(selectedKeys);
+                    field.onChange(arr[0]);
+                  }}
+                >
+                  {providers.map((provider) => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </Select>
+              )}
+            />
+
+            <Controller
+              name="params.temprature"
+              control={control}
+              render={({ field }) => (
+                <Slider
+                  size="sm"
+                  label="Temprature"
+                  minValue={0}
+                  maxValue={2}
+                  step={0.01}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+
+            <Controller
+              name="params.max_tokens"
+              control={control}
+              render={({ field }) => (
+                <Slider
+                  size="sm"
+                  label="Max Tokens"
+                  minValue={1}
+                  maxValue={4095}
+                  value={field.value}
+                  onChange={field.onChange}
+                />
+              )}
+            />
+          </div>
         </div>
       </form>
     </div>
