@@ -4,6 +4,7 @@ import { Controller, useForm } from "react-hook-form";
 import { LuSave } from "react-icons/lu";
 import { z } from "zod";
 import System from "./components/system";
+import UserMessage from "./components/user-message";
 
 const MessageSchema = z.object({
   role: z.enum(["system", "assistant"]),
@@ -42,7 +43,7 @@ export default function PromptDetailsPage() {
                   className="w-56"
                   size="sm"
                   classNames={{
-                    inputWrapper: "bg-background",
+                    inputWrapper: "bg-background shadow-none",
                     input: "font-medium text-base",
                   }}
                   placeholder="Hello world prompt"
@@ -63,7 +64,7 @@ export default function PromptDetailsPage() {
           </Button>
         </div>
         <div className="flex-1 flex overflow-y-hidden">
-          <div className="flex-1 h-full overflow-y-scroll p-6 space-y-4">
+          <div className="flex-1 h-full overflow-y-auto">
             <Controller
               name="system"
               control={control}
@@ -75,6 +76,9 @@ export default function PromptDetailsPage() {
                 />
               )}
             />
+
+            <UserMessage />
+            <UserMessage />
           </div>
           <div className="bg-green-300 flex-1">2</div>
           <div className="bg-yellow-200 w-56">3</div>
