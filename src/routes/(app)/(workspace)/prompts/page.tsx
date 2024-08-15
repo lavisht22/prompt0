@@ -77,7 +77,7 @@ export default function PromptsPage() {
             key={prompt.id}
             radius="none"
             className="w-full shadow-none"
-            // onPress={() => setActiveProvider(provider)}
+            onPress={() => navigate(prompt.id)}
             isPressable
           >
             <CardBody className="flex flex-row justify-between items-center px-6 py-4">

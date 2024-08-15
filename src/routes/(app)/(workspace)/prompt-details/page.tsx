@@ -7,6 +7,15 @@ import SystemMessage, {
   SystemMessageSchema,
 } from "./components/system-message";
 import UserMessage, { UserMessageSchema } from "./components/user-message";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import supabase from "utils/supabase";
+import { Database } from "supabase/types";
+import toast from "react-hot-toast";
+import { useAuth } from "contexts/auth-context";
+import FullSpinner from "components/full-spinner";
+
+type Version = Database["public"]["Tables"]["versions"]["Row"];
 
 const MessageSchema = z.union([SystemMessageSchema, UserMessageSchema]);
 
@@ -18,11 +27,16 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export default function PromptDetailsPage() {
-  const { handleSubmit, control } = useForm<FormValues>({
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [versions, setVersions] = useState<Version[]>([]);
+
+  const { promptId } = useParams<{ promptId: string }>();
+  const { handleSubmit, control, reset } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       name: "",
-
       messages: [
         {
           role: "system",
@@ -41,14 +55,129 @@ export default function PromptDetailsPage() {
     control,
   });
 
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (!promptId) {
+          return;
+        }
+
+        if (promptId === "create") {
+          return;
+        }
+
+        setLoading(true);
+
+        const { data: prompt, error: promptReadError } = await supabase
+          .from("prompts")
+          .select("*")
+          .eq("id", promptId)
+          .single();
+
+        if (promptReadError) {
+          throw promptReadError;
+        }
+
+        const { data: versions, error: versionsReadError } = await supabase
+          .from("versions")
+          .select("*")
+          .eq("prompt_id", promptId)
+          .order("number", { ascending: false });
+
+        if (versionsReadError) {
+          throw versionsReadError;
+        }
+
+        setVersions(versions);
+
+        const latestVersion =
+          versions.length > 0
+            ? (versions[0].data as {
+                messages?: FormValues["messages"];
+              })
+            : {};
+
+        const payload = {
+          name: prompt.name,
+          messages: [
+            {
+              role: "system" as const,
+              content: "",
+            },
+          ],
+          ...latestVersion,
+        };
+
+        reset(payload);
+
+        setLoading(false);
+      } catch {
+        toast.error("Oops! Something went wrong.");
+      }
+    };
+
+    init();
+  }, [promptId, reset]);
+
+  const save = useCallback(
+    async (values: FormValues) => {
+      try {
+        if (!promptId || !session) {
+          return;
+        }
+
+        setSaving(true);
+
+        if (promptId === "create") {
+          return;
+        }
+
+        const number = versions.length > 0 ? versions[0].number + 1 : 1;
+
+        await supabase
+          .from("prompts")
+          .update({
+            name: values.name,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", promptId);
+
+        const { data, error } = await supabase
+          .from("versions")
+          .insert({
+            prompt_id: promptId,
+            number,
+            data: {
+              messages: values.messages,
+            },
+            user_id: session?.user.id,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setVersions((prev) => [data, ...prev]);
+
+        toast.success("Saved successfully.");
+      } catch {
+        toast.error("Oops! Something went wrong.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [promptId, session, versions]
+  );
+
+  if (loading) {
+    return <FullSpinner />;
+  }
+
   return (
     <div className="h-full">
-      <form
-        className="h-full flex flex-col"
-        onSubmit={handleSubmit((values) => {
-          console.log("VALYES", values);
-        })}
-      >
+      <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
         <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
           <div className="flex items-center gap-x-2">
             <h2 className="font-medium">Prompts</h2>
@@ -73,6 +202,7 @@ export default function PromptDetailsPage() {
           </div>
 
           <Button
+            isLoading={saving}
             type="submit"
             size="sm"
             color="primary"
@@ -87,6 +217,7 @@ export default function PromptDetailsPage() {
               if (field.role === "system") {
                 return (
                   <Controller
+                    key={field.id}
                     name={`messages.${index}`}
                     control={control}
                     render={({ field, fieldState }) => (
@@ -105,6 +236,7 @@ export default function PromptDetailsPage() {
               if (field.role === "user") {
                 return (
                   <Controller
+                    key={field.id}
                     name={`messages.${index}`}
                     control={control}
                     render={({ field, fieldState }) => (

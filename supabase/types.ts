@@ -144,6 +144,48 @@ export type Database = {
           },
         ]
       }
+      versions: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          number: number
+          prompt_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          number: number
+          prompt_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          number?: number
+          prompt_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "versions_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "versions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_users: {
         Row: {
           created_at: string
@@ -217,6 +259,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_prompt_admin: {
+        Args: {
+          user_id: string
+          prompt_id: string
+        }
+        Returns: boolean
+      }
+      is_prompt_reader: {
+        Args: {
+          user_id: string
+          prompt_id: string
+        }
+        Returns: boolean
+      }
       is_provider_admin: {
         Args: {
           user_id: string
