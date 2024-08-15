@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
+import { Button, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { LuPlus, LuSave } from "react-icons/lu";
 import { z } from "zod";
@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "contexts/auth-context";
 import FullSpinner from "components/full-spinner";
 import useWorkspacesStore from "stores/workspaces";
+import Name from "./components/name";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 type Provider = {
@@ -47,10 +48,10 @@ export default function PromptDetailsPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
 
   const { promptId } = useParams<{ promptId: string }>();
-  const { handleSubmit, control, reset } = useForm<FormValues>({
+  const { handleSubmit, control, reset, formState } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      name: "",
+      name: "Untitled prompt",
       provider_id: null,
       messages: [
         {
@@ -133,7 +134,7 @@ export default function PromptDetailsPage() {
         };
 
         const payload = {
-          name: prompt.name,
+          name: prompt.name === "" ? "Untitled prompt" : prompt.name,
           provider_id: prompt.provider_id,
           params: {
             temprature: 1,
@@ -205,6 +206,8 @@ export default function PromptDetailsPage() {
 
         setVersions((prev) => [data, ...prev]);
 
+        reset(values);
+
         toast.success("Saved successfully.");
       } catch {
         toast.error("Oops! Something went wrong.");
@@ -212,7 +215,7 @@ export default function PromptDetailsPage() {
         setSaving(false);
       }
     },
-    [promptId, session, versions]
+    [promptId, reset, session, versions]
   );
 
   if (loading) {
@@ -223,26 +226,26 @@ export default function PromptDetailsPage() {
     <div className="h-full">
       <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
-          <div className="flex items-center gap-x-2">
+          <div className="flex items-center">
             <h2 className="font-medium">Prompts</h2>
-            <p className="-mr-2 font-medium">{" > "}</p>
+            <p className="font-medium ml-2">{">"}</p>
             <Controller
               name="name"
               control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  className="w-56"
-                  size="sm"
-                  classNames={{
-                    inputWrapper: "bg-background shadow-none",
-                    input: "font-medium text-base",
-                  }}
-                  placeholder="Hello world prompt"
-                  isInvalid={fieldState.invalid}
-                  {...field}
-                />
+              render={({ field }) => (
+                <Name value={field.value} onValueChange={field.onChange} />
               )}
             />
+            {versions.length > 0 && (
+              <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
+                <span className="text-xs font-bold">v{versions[0].number}</span>
+              </div>
+            )}
+            {formState.isDirty && (
+              <div className="bg-default-100 text-default-600 rounded-lg px-2 py-1 flex justify-center items-center">
+                <span className="text-xs font-bold">UNSAVED</span>
+              </div>
+            )}
           </div>
 
           <Button

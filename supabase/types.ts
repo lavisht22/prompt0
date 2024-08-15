@@ -42,7 +42,6 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          messages: Json
           name: string
           params: Json
           provider_id: string | null
@@ -53,7 +52,6 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
-          messages?: Json
           name?: string
           params?: Json
           provider_id?: string | null
@@ -64,7 +62,6 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
-          messages?: Json
           name?: string
           params?: Json
           provider_id?: string | null
