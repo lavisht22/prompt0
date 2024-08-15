@@ -1,13 +1,21 @@
 import { Button, Textarea } from "@nextui-org/react";
 import { LuInfo } from "react-icons/lu";
+import { z } from "zod";
 
-export default function System({
+export const SystemMessageSchema = z.object({
+  role: z.literal("system"),
+  content: z.string(),
+});
+
+type SystemMessage = z.infer<typeof SystemMessageSchema>;
+
+export default function SystemMessage({
   value,
   onValueChange,
   isInvalid,
 }: {
-  value: string;
-  onValueChange: (value: string) => void;
+  value: SystemMessage;
+  onValueChange: (value: SystemMessage) => void;
   isInvalid?: boolean;
 }) {
   return (
@@ -26,8 +34,13 @@ export default function System({
       <Textarea
         aria-label="System Prompt"
         placeholder="Set a system prompt..."
-        value={value}
-        onValueChange={onValueChange}
+        value={value.content}
+        onValueChange={(newValue) =>
+          onValueChange({
+            ...value,
+            content: newValue,
+          })
+        }
         isInvalid={isInvalid}
         minRows={1}
         maxRows={100000}
