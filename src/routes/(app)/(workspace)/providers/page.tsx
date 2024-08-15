@@ -58,7 +58,7 @@ export default function ProvidersPage() {
 
   return (
     <div className="h-full">
-      <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
+      <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
         <div className="flex items-center space-x-2">
           <h2 className="font-medium">Providers</h2>
         </div>

@@ -178,7 +178,7 @@ export default function PromptDetailsPage() {
   return (
     <div className="h-full">
       <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
-        <div className="flex justify-between items-center bg-background px-6 h-12 border-b">
+        <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center gap-x-2">
             <h2 className="font-medium">Prompts</h2>
             <p className="-mr-2 font-medium">{" > "}</p>
