@@ -1,44 +1,96 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.1";
-import OpenAI from "https://esm.sh/openai@4.55.4";
-import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.25.1";
+const runners: {
+  [key: string]: Runner;
+} = {
+  openai,
+};
 
-// const openai = new OpenAI();
-// const anthropic = new Anthropic();
-
-import { SuccessResponse } from "../_shared/response.ts";
+import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
+import { serviceClient } from "../_shared/supabase.ts";
+import { openai } from "./runners/openai.ts";
+import { Runner } from "./types.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return SuccessResponse("ok");
   }
 
-  const { prompt_id, time }: { prompt_id: string; time: number } = await req
-    .json();
+  try {
+    const { prompt_id, version_id, stream }: {
+      prompt_id: string;
+      version_id: string;
+      stream?: boolean;
+    } = await req
+      .json();
 
-  const before = Date.now();
+    if (!prompt_id || !version_id) {
+      return ErrorResponse("prompt_id and version_id are required", 400);
+    }
 
-  console.log("BEFORE", before, before - time);
+    const before = Date.now();
 
-  const authHeader = req.headers.get("Authorization")!;
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-    { global: { headers: { Authorization: authHeader } } },
-  );
+    const { data: prompt, error: promptReadError } = await serviceClient.from(
+      "prompts",
+    ).select(
+      "id, workspace_id, providers(id, type, options, keys(value)), params",
+    ).eq(
+      "id",
+      prompt_id,
+    ).single();
 
-  const { data } = await supabaseClient.from("prompts").select(
-    "*, providers(*)",
-  ).eq(
-    "id",
-    prompt_id,
-  ).single();
+    if (promptReadError) {
+      throw promptReadError;
+    }
 
-  const after = Date.now();
-  console.log("AFTER", after, after - time);
+    if (!prompt.providers) {
+      return ErrorResponse(
+        "No provider has been linked with this prompt. Please link a provider to continue.",
+        400,
+      );
+    }
 
-  console.log("TIME", after - before);
+    if (!prompt.providers.keys) {
+      return ErrorResponse(
+        "No API key has been linked with this provider. Please link an API key to continue.",
+        400,
+      );
+    }
 
-  return SuccessResponse(
-    data,
-  );
+    const { data: version, error: versionReadError } = await serviceClient.from(
+      "versions",
+    ).select("*").eq("id", version_id).eq("prompt_id", prompt_id).single();
+
+    if (versionReadError) {
+      throw versionReadError;
+    }
+
+    const after = Date.now();
+
+    console.log("Read time", after - before);
+
+    if (!Object.keys(runners).includes(prompt.providers.type)) {
+      return ErrorResponse("Provider not supported", 400);
+    }
+
+    const runner = runners[prompt.providers.type];
+
+    const payload = {
+      workspace_id: prompt.workspace_id,
+      version_id,
+      prompt_id,
+      provider_id: prompt.providers.id,
+      apiKey: prompt.providers.keys.value,
+      options: prompt.providers.options,
+      params: prompt.params,
+      data: version.data,
+    };
+
+    if (stream) {
+      return runner.streaming();
+    } else {
+      return runner.nonStreaming(payload);
+    }
+  } catch (error) {
+    console.error(error);
+    return ErrorResponse(error.message, 500);
+  }
 });

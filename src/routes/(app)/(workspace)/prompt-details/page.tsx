@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Select, SelectItem, Slider } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { LuPlus, LuSave } from "react-icons/lu";
 import { z } from "zod";
@@ -10,14 +10,16 @@ import UserMessage, { UserMessageSchema } from "./components/user-message";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import supabase from "utils/supabase";
-import { Database } from "supabase/types";
+import { Database } from "supabase/functions/types";
 import toast from "react-hot-toast";
 import { useAuth } from "contexts/auth-context";
 import FullSpinner from "components/full-spinner";
 import useWorkspacesStore from "stores/workspaces";
 import Name from "./components/name";
+import Response from "./components/response";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
+
 type Provider = {
   id: string;
   type: string;
@@ -27,16 +29,27 @@ type Provider = {
 const MessageSchema = z.union([SystemMessageSchema, UserMessageSchema]);
 
 const FormSchema = z.object({
-  name: z.string().min(2, "Name is too short."),
-  provider_id: z.string().uuid().or(z.null()),
   messages: z.array(MessageSchema),
-  params: z.object({
-    temprature: z.number().min(0).max(2),
-    max_tokens: z.number().min(1).max(4095),
-  }),
+  model: z.string(),
+  temperature: z.number().min(0).max(2),
+  max_tokens: z.number().min(1).max(4095),
+  provider_id: z.string().uuid().or(z.null()),
 });
 
 type FormValues = z.infer<typeof FormSchema>;
+
+const defaultValues: FormValues = {
+  messages: [
+    {
+      role: "system",
+      content: "",
+    },
+  ],
+  model: "gpt-4o",
+  temperature: 1,
+  max_tokens: 256,
+  provider_id: null,
+};
 
 export default function PromptDetailsPage() {
   const { session } = useAuth();
@@ -46,24 +59,13 @@ export default function PromptDetailsPage() {
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [name, setName] = useState("");
+  const [response] = useState("");
 
   const { promptId } = useParams<{ promptId: string }>();
   const { handleSubmit, control, reset, formState } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
-    defaultValues: {
-      name: "Untitled prompt",
-      provider_id: null,
-      messages: [
-        {
-          role: "system",
-          content: "",
-        },
-      ],
-      params: {
-        temprature: 1,
-        max_tokens: 256,
-      },
-    },
+    defaultValues,
   });
 
   const {
@@ -109,6 +111,8 @@ export default function PromptDetailsPage() {
           throw promptReadError;
         }
 
+        setName(prompt.name);
+
         const { data: versions, error: versionsReadError } = await supabase
           .from("versions")
           .select("*")
@@ -123,34 +127,13 @@ export default function PromptDetailsPage() {
 
         const latestVersion =
           versions.length > 0
-            ? (versions[0].data as {
-                messages?: FormValues["messages"];
-              })
-            : {};
+            ? {
+                ...versions[0],
+                messages: versions[0].messages as FormValues["messages"],
+              }
+            : defaultValues;
 
-        const params = prompt.params as {
-          temprature?: number;
-          max_tokens?: number;
-        };
-
-        const payload = {
-          name: prompt.name === "" ? "Untitled prompt" : prompt.name,
-          provider_id: prompt.provider_id,
-          params: {
-            temprature: 1,
-            max_tokens: 256,
-            ...params,
-          },
-          messages: [
-            {
-              role: "system" as const,
-              content: "",
-            },
-          ],
-          ...latestVersion,
-        };
-
-        reset(payload);
+        reset(latestVersion as FormValues);
 
         setLoading(false);
       } catch {
@@ -177,25 +160,13 @@ export default function PromptDetailsPage() {
 
         const number = versions.length > 0 ? versions[0].number + 1 : 1;
 
-        await supabase
-          .from("prompts")
-          .update({
-            name: values.name,
-            provider_id: values.provider_id,
-            params: values.params,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", promptId);
-
         const { data, error } = await supabase
           .from("versions")
           .insert({
             prompt_id: promptId,
-            number,
-            data: {
-              messages: values.messages,
-            },
             user_id: session?.user.id,
+            number,
+            ...values,
           })
           .select()
           .single();
@@ -208,7 +179,21 @@ export default function PromptDetailsPage() {
 
         reset(values);
 
-        toast.success("Saved successfully.");
+        // // Call the run function
+        // const { data: completionResponse, error: completionError } =
+        //   await supabase.functions.invoke("run", {
+        //     body: {
+        //       prompt_id: promptId,
+        //       version_id: data.id,
+        //       streaming: false,
+        //     },
+        //   });
+
+        // if (completionError) {
+        //   throw completionError;
+        // }
+
+        // console.log(completionResponse);
       } catch {
         toast.error("Oops! Something went wrong.");
       } finally {
@@ -216,6 +201,27 @@ export default function PromptDetailsPage() {
       }
     },
     [promptId, reset, session, versions]
+  );
+
+  const updateName = useCallback(
+    async (newName: string) => {
+      try {
+        if (!promptId) {
+          return;
+        }
+
+        await supabase
+          .from("prompts")
+          .update({ name: newName, updated_at: new Date().toISOString() })
+          .eq("id", promptId)
+          .throwOnError();
+
+        setName(newName);
+      } catch {
+        toast.error("Oops! Something went wrong.");
+      }
+    },
+    [promptId]
   );
 
   if (loading) {
@@ -229,13 +235,8 @@ export default function PromptDetailsPage() {
           <div className="flex items-center">
             <h2 className="font-medium">Prompts</h2>
             <p className="font-medium ml-2">{">"}</p>
-            <Controller
-              name="name"
-              control={control}
-              render={({ field }) => (
-                <Name value={field.value} onValueChange={field.onChange} />
-              )}
-            />
+            <Name value={name} onValueChange={updateName} />
+
             {versions.length > 0 && (
               <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
                 <span className="text-xs font-bold">v{versions[0].number}</span>
@@ -316,13 +317,16 @@ export default function PromptDetailsPage() {
               </Button>
             </div>
           </div>
-          <div className="flex-1 border-r">2</div>
+          <div className="flex-1 border-r">
+            <Response value={response} />
+          </div>
           <div className="w-56 p-3 flex flex-col gap-8">
             <Controller
               name="provider_id"
               control={control}
               render={({ field, fieldState }) => (
                 <Select
+                  label="Provider"
                   aria-label="Provider"
                   isInvalid={fieldState.invalid}
                   selectedKeys={new Set([field.value || ""])}
@@ -341,12 +345,25 @@ export default function PromptDetailsPage() {
             />
 
             <Controller
-              name="params.temprature"
+              name="model"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Model"
+                  placeholder="Model"
+                  {...field}
+                  isInvalid={fieldState.invalid}
+                />
+              )}
+            />
+
+            <Controller
+              name="temperature"
               control={control}
               render={({ field }) => (
                 <Slider
                   size="sm"
-                  label="Temprature"
+                  label="Temperature"
                   minValue={0}
                   maxValue={2}
                   step={0.01}
@@ -357,7 +374,7 @@ export default function PromptDetailsPage() {
             />
 
             <Controller
-              name="params.max_tokens"
+              name="max_tokens"
               control={control}
               render={({ field }) => (
                 <Slider

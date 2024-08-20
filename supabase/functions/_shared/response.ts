@@ -32,5 +32,11 @@ export function SuccessResponse(payload: unknown) {
 }
 
 export function StreamResponse(stream: ReadableStream) {
-  return new Response(stream, { headers });
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      Connection: "keep-alive",
+    },
+  });
 }

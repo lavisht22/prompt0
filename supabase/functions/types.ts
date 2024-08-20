@@ -38,6 +38,60 @@ export type Database = {
           },
         ]
       }
+      logs: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          input_tokens: number
+          output_tokens: number
+          provider: Json
+          request: Json
+          response: Json
+          version_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          cost: number
+          created_at?: string
+          id?: string
+          input_tokens: number
+          output_tokens: number
+          provider: Json
+          request?: Json
+          response?: Json
+          version_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          output_tokens?: number
+          provider?: Json
+          request?: Json
+          response?: Json
+          version_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompts: {
         Row: {
           created_at: string
@@ -144,26 +198,38 @@ export type Database = {
       versions: {
         Row: {
           created_at: string
-          data: Json
           id: string
+          max_tokens: number
+          messages: Json
+          model: string
           number: number
           prompt_id: string
+          provider_id: string | null
+          temperature: number
           user_id: string
         }
         Insert: {
           created_at?: string
-          data?: Json
           id?: string
+          max_tokens?: number
+          messages?: Json
+          model: string
           number: number
           prompt_id: string
+          provider_id?: string | null
+          temperature?: number
           user_id: string
         }
         Update: {
           created_at?: string
-          data?: Json
           id?: string
+          max_tokens?: number
+          messages?: Json
+          model?: string
           number?: number
           prompt_id?: string
+          provider_id?: string | null
+          temperature?: number
           user_id?: string
         }
         Relationships: [
@@ -172,6 +238,13 @@ export type Database = {
             columns: ["prompt_id"]
             isOneToOne: false
             referencedRelation: "prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "versions_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "providers"
             referencedColumns: ["id"]
           },
           {
