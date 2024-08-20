@@ -1,19 +1,10 @@
-import { TokenJS } from "https://esm.sh/token.js@0.4.3";
-
-const runners: {
-  [key: string]: Runner;
-} = {
-  openai,
-};
-
 import {
   ErrorResponse,
   StreamResponse,
   SuccessResponse,
 } from "../_shared/response.ts";
 import { serviceClient } from "../_shared/supabase.ts";
-import { openai } from "./runners/openai.ts";
-import { Runner, TextGenerateParams } from "./types.ts";
+import { OpenAI } from "https://esm.sh/openai@4.56.0";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -76,28 +67,34 @@ Deno.serve(async (req) => {
 
     console.log("Read time", after - before);
 
-    const tokenjs = new TokenJS({ apiKey: "YOUR_API_KEY" });
-
-    if (!Object.keys(runners).includes(version.providers.type)) {
-      return ErrorResponse("Provider not supported", 400);
-    }
-
-    const runner = runners[version.providers.type];
-
-    const params: TextGenerateParams = {
-      messages: version.messages as TextGenerateParams["messages"],
-      model: version.model,
-      temperature: version.temperature,
-      max_tokens: version.max_tokens,
-      providers: version.providers as TextGenerateParams["providers"],
-    };
+    const client = new OpenAI({
+      baseURL: "https://rubeus.lavisht22.workers.dev/v1",
+      apiKey: version.providers.keys.value,
+      defaultHeaders: {
+        "x-portkey-provider": version.providers.type,
+      },
+    });
 
     if (stream) {
       const encoder = new TextEncoder();
 
       const readableStream = new ReadableStream({
         async start(controller) {
-          const response = await runner.text.stream(params);
+          if (!version.providers) {
+            return;
+          }
+
+          const response = await client.chat.completions.create({
+            messages: version.messages as unknown as Array<
+              OpenAI.Chat.Completions.ChatCompletionMessageParam
+            >,
+            model: version.model,
+            max_tokens: version.max_tokens,
+            temperature: version.temperature,
+            stream: true,
+          });
+
+          // response.toReadableStream();
 
           for await (const chunk of response) {
             controller.enqueue(
@@ -111,7 +108,15 @@ Deno.serve(async (req) => {
 
       return StreamResponse(readableStream);
     } else {
-      const response = await runner.text.generate(params);
+      const response = await client.chat.completions.create({
+        messages: version.messages as unknown as Array<
+          OpenAI.Chat.Completions.ChatCompletionMessageParam
+        >,
+        model: version.model,
+        max_tokens: version.max_tokens,
+        temperature: version.temperature,
+        stream: false,
+      });
 
       return SuccessResponse(response);
     }
