@@ -17,6 +17,7 @@ import FullSpinner from "components/full-spinner";
 import useWorkspacesStore from "stores/workspaces";
 import Name from "./components/name";
 import Response from "./components/response";
+import { stream } from "fetch-event-stream";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -60,7 +61,7 @@ export default function PromptDetailsPage() {
   const [versions, setVersions] = useState<Version[]>([]);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [name, setName] = useState("");
-  const [response] = useState("");
+  const [response, setResponse] = useState("");
 
   const { promptId } = useParams<{ promptId: string }>();
   const { handleSubmit, control, reset, formState } = useForm<FormValues>({
@@ -179,20 +180,38 @@ export default function PromptDetailsPage() {
         reset(values);
 
         // Call the run function
-        const { data: completionResponse, error: completionError } =
-          await supabase.functions.invoke("run", {
-            body: {
+        const response = await stream(
+          "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
+          {
+            method: "POST",
+            body: JSON.stringify({
               prompt_id: promptId,
               version_id: data.id,
               stream: true,
+            }),
+            headers: {
+              Authorization: `Bearer ${
+                import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
+              }`,
             },
-          });
+          }
+        );
 
-        if (completionError) {
-          throw completionError;
+        for await (const event of response) {
+          if (!event.data) {
+            continue;
+          }
+
+          const data = JSON.parse(event.data) as {
+            delta: {
+              content: string | null;
+            };
+          };
+
+          console.log(data);
+
+          setResponse((prev) => (prev += data.delta.content || ""));
         }
-
-        console.log(completionResponse);
       } catch {
         toast.error("Oops! Something went wrong.");
       } finally {

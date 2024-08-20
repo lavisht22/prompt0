@@ -12,6 +12,7 @@ export default defineConfig({
       assets: "/src/assets",
       contexts: "/src/contexts",
       routes: "/src/routes",
+      eventsource: "eventsource/lib/eventsource",
     },
   },
 });

@@ -15,6 +15,7 @@ export default function Response({ value }: { value: string }) {
         minRows={20}
         maxRows={100000}
         placeholder="Run prompt to see assistant response"
+        value={value}
       />
       <div>
         {value.length > 0 && (
