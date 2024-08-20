@@ -147,7 +147,6 @@ export default function PromptDetailsPage() {
   const save = useCallback(
     async (values: FormValues) => {
       try {
-        console.log(values);
         if (!promptId || !session) {
           return;
         }
@@ -185,7 +184,7 @@ export default function PromptDetailsPage() {
             body: {
               prompt_id: promptId,
               version_id: data.id,
-              streaming: false,
+              stream: true,
             },
           });
 

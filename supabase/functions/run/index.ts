@@ -4,7 +4,11 @@ const runners: {
   openai,
 };
 
-import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
+import {
+  ErrorResponse,
+  StreamResponse,
+  SuccessResponse,
+} from "../_shared/response.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { openai } from "./runners/openai.ts";
 import { Runner, TextGenerateParams } from "./types.ts";
@@ -85,8 +89,23 @@ Deno.serve(async (req) => {
     };
 
     if (stream) {
-      // return runner.streaming();
-      return ErrorResponse("Streaming not supported", 400);
+      const encoder = new TextEncoder();
+
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          const response = await runner.text.stream(params);
+
+          for await (const chunk of response) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
+            );
+          }
+
+          controller.close();
+        },
+      });
+
+      return StreamResponse(readableStream);
     } else {
       const response = await runner.text.generate(params);
 

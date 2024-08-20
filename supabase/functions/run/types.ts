@@ -42,10 +42,18 @@ type TextGenerateResponse = {
     };
 };
 
+type TextGenerateChunk = {
+    delta: string;
+};
+
 export type Runner = {
     text: {
         generate: (
             params: TextGenerateParams,
         ) => Promise<TextGenerateResponse>;
+
+        stream: (
+            params: TextGenerateParams,
+        ) => Promise<AsyncIterable<TextGenerateChunk>>;
     };
 };
