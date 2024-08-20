@@ -1,5 +1,5 @@
 import OpenAI from "https://esm.sh/v135/openai@4.55.4/index.js";
-import { Runner, TextGenerateParams } from "../types.ts";
+import { Runner, TextGenerateChunk, TextGenerateParams } from "../types.ts";
 import { Stream } from "https://esm.sh/v135/openai@4.55.4/streaming.js";
 
 const transformParams = (params: TextGenerateParams) => {
@@ -15,14 +15,21 @@ const transformParams = (params: TextGenerateParams) => {
 
 async function* transformStream(
     stream: Stream<OpenAI.Chat.Completions.ChatCompletionChunk>,
-): AsyncIterable<{ delta: string }> {
+): AsyncIterable<TextGenerateChunk> {
     for await (const entry of stream) {
         if (entry.choices.length === 0) {
             continue;
         }
 
         yield {
+            id: entry.id,
+            model: entry.model,
             delta: entry.choices[0].delta.content || "",
+
+            usage: {
+                input_tokens: entry.usage?.prompt_tokens,
+                output_tokens: entry.usage?.completion_tokens,
+            },
         };
     }
 }
@@ -62,6 +69,9 @@ export const openai: Runner = {
             const response = await client.chat.completions.create({
                 ...transformParams(params),
                 stream: true,
+                stream_options: {
+                    include_usage: true,
+                },
             });
 
             return transformStream(response);

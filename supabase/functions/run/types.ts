@@ -35,6 +35,8 @@ export type TextGenerateParams = {
 };
 
 type TextGenerateResponse = {
+    id: string;
+    model: string;
     content: string;
     usage: {
         input_tokens?: number;
@@ -42,8 +44,14 @@ type TextGenerateResponse = {
     };
 };
 
-type TextGenerateChunk = {
+export type TextGenerateChunk = {
+    id: string;
+    model: string;
     delta: string;
+    usage: {
+        input_tokens?: number;
+        output_tokens?: number;
+    } | null;
 };
 
 export type Runner = {

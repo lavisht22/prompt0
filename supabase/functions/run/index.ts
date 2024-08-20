@@ -1,3 +1,5 @@
+import { TokenJS } from "https://esm.sh/token.js@0.4.3";
+
 const runners: {
   [key: string]: Runner;
 } = {
@@ -73,6 +75,8 @@ Deno.serve(async (req) => {
     const after = Date.now();
 
     console.log("Read time", after - before);
+
+    const tokenjs = new TokenJS({ apiKey: "YOUR_API_KEY" });
 
     if (!Object.keys(runners).includes(version.providers.type)) {
       return ErrorResponse("Provider not supported", 400);
