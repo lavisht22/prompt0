@@ -7,7 +7,7 @@ const runners: {
 import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { openai } from "./runners/openai.ts";
-import { Runner } from "./types.ts";
+import { Runner, TextGenerateParams } from "./types.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,66 +28,69 @@ Deno.serve(async (req) => {
 
     const before = Date.now();
 
-    const { data: prompt, error: promptReadError } = await serviceClient.from(
-      "prompts",
-    ).select(
-      "id, workspace_id, providers(id, type, options, keys(value)), params",
-    ).eq(
-      "id",
-      prompt_id,
-    ).single();
+    // const { data: prompt, error: promptReadError } = await serviceClient.from(
+    //   "prompts",
+    // ).select(
+    //   "id, workspace_id",
+    // ).eq(
+    //   "id",
+    //   prompt_id,
+    // ).single();
 
-    if (promptReadError) {
-      throw promptReadError;
+    // if (promptReadError) {
+    //   throw promptReadError;
+    // }
+
+    const { data: version, error: versionReadError } = await serviceClient.from(
+      "versions",
+    ).select("*, providers(id, type, options, keys(value))").eq(
+      "id",
+      version_id,
+    ).eq("prompt_id", prompt_id).single();
+
+    if (versionReadError) {
+      throw versionReadError;
     }
 
-    if (!prompt.providers) {
+    if (!version.providers) {
       return ErrorResponse(
         "No provider has been linked with this prompt. Please link a provider to continue.",
         400,
       );
     }
 
-    if (!prompt.providers.keys) {
+    if (!version.providers.keys) {
       return ErrorResponse(
         "No API key has been linked with this provider. Please link an API key to continue.",
         400,
       );
     }
 
-    const { data: version, error: versionReadError } = await serviceClient.from(
-      "versions",
-    ).select("*").eq("id", version_id).eq("prompt_id", prompt_id).single();
-
-    if (versionReadError) {
-      throw versionReadError;
-    }
-
     const after = Date.now();
 
     console.log("Read time", after - before);
 
-    if (!Object.keys(runners).includes(prompt.providers.type)) {
+    if (!Object.keys(runners).includes(version.providers.type)) {
       return ErrorResponse("Provider not supported", 400);
     }
 
-    const runner = runners[prompt.providers.type];
+    const runner = runners[version.providers.type];
 
-    const payload = {
-      workspace_id: prompt.workspace_id,
-      version_id,
-      prompt_id,
-      provider_id: prompt.providers.id,
-      apiKey: prompt.providers.keys.value,
-      options: prompt.providers.options,
-      params: prompt.params,
-      data: version.data,
+    const params: TextGenerateParams = {
+      messages: version.messages as TextGenerateParams["messages"],
+      model: version.model,
+      temperature: version.temperature,
+      max_tokens: version.max_tokens,
+      providers: version.providers as TextGenerateParams["providers"],
     };
 
     if (stream) {
-      return runner.streaming();
+      // return runner.streaming();
+      return ErrorResponse("Streaming not supported", 400);
     } else {
-      return runner.nonStreaming(payload);
+      const response = await runner.text.generate(params);
+
+      return SuccessResponse(response);
     }
   } catch (error) {
     console.error(error);

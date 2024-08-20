@@ -179,21 +179,21 @@ export default function PromptDetailsPage() {
 
         reset(values);
 
-        // // Call the run function
-        // const { data: completionResponse, error: completionError } =
-        //   await supabase.functions.invoke("run", {
-        //     body: {
-        //       prompt_id: promptId,
-        //       version_id: data.id,
-        //       streaming: false,
-        //     },
-        //   });
+        // Call the run function
+        const { data: completionResponse, error: completionError } =
+          await supabase.functions.invoke("run", {
+            body: {
+              prompt_id: promptId,
+              version_id: data.id,
+              streaming: false,
+            },
+          });
 
-        // if (completionError) {
-        //   throw completionError;
-        // }
+        if (completionError) {
+          throw completionError;
+        }
 
-        // console.log(completionResponse);
+        console.log(completionResponse);
       } catch {
         toast.error("Oops! Something went wrong.");
       } finally {

@@ -97,8 +97,6 @@ export type Database = {
           created_at: string
           id: string
           name: string
-          params: Json
-          provider_id: string | null
           updated_at: string
           user_id: string
           workspace_id: string
@@ -107,8 +105,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          params?: Json
-          provider_id?: string | null
           updated_at?: string
           user_id: string
           workspace_id: string
@@ -117,20 +113,11 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-          params?: Json
-          provider_id?: string | null
           updated_at?: string
           user_id?: string
           workspace_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "prompts_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "providers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "prompts_user_id_fkey"
             columns: ["user_id"]

@@ -1,20 +1,51 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// deno-lint-ignore-file no-explicit-any
+type SystemMessage = {
+    role: "system";
+    content: string;
+};
 
-type Payload = {
-    workspace_id: string;
-    version_id: string;
-    prompt_id: string;
-    provider_id: string;
-    apiKey: string;
-    options: any;
-    params: any;
-    data: any;
+type UserMessage = {
+    role: "user";
+    content: ({
+        type: "text";
+        text: string;
+    } | {
+        type: "image_url";
+        image_url: {
+            url: string;
+            detail: "auto" | "low" | "high";
+        };
+    })[];
+};
+
+export type Message = SystemMessage | UserMessage;
+
+export type TextGenerateParams = {
+    messages: Message[];
+    model: string | null;
+    temperature: number;
+    max_tokens: number;
+    providers: {
+        id: string;
+        type: string;
+        options: object;
+        keys: {
+            value: string;
+        };
+    };
+};
+
+type TextGenerateResponse = {
+    content: string;
+    usage: {
+        input_tokens?: number;
+        output_tokens?: number;
+    };
 };
 
 export type Runner = {
-    streaming: (payload: Payload) => Response;
-    nonStreaming: (
-        payload: Payload,
-    ) => Promise<Response>;
+    text: {
+        generate: (
+            params: TextGenerateParams,
+        ) => Promise<TextGenerateResponse>;
+    };
 };
