@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Database } from "../../supabase/types";
+import { Database } from "../../supabase/functions/types";
 
 type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
 

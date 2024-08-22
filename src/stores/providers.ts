@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Database } from "../../supabase/types";
+import { Database } from "../../supabase/functions/types";
 
 export type Provider =
     & Omit<Database["public"]["Tables"]["providers"]["Row"], "options">
