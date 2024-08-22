@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { LuPlay, LuPlus, LuSave } from "react-icons/lu";
+import { LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
   SystemMessageSchema,
@@ -21,6 +21,7 @@ import { stream } from "fetch-event-stream";
 import AssistantMessage, {
   AssistantMessageSchema,
 } from "./components/assistant-message";
+import { useHotkeys } from "react-hotkeys-hook";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -256,6 +257,8 @@ export default function PromptDetailsPage() {
     },
     [promptId]
   );
+
+  useHotkeys("mod+enter", () => handleSubmit(save)(), [save]);
 
   if (loading) {
     return <FullSpinner />;
