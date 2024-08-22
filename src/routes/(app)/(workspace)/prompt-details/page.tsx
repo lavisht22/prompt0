@@ -154,30 +154,37 @@ export default function PromptDetailsPage() {
 
         setSaving(true);
 
-        if (promptId === "create") {
-          return;
+        let latestVersion = versions[0];
+
+        if (formState.isDirty || !latestVersion) {
+          if (promptId === "create") {
+            return;
+          }
+
+          const number = versions.length > 0 ? versions[0].number + 1 : 1;
+
+          const { data, error } = await supabase
+            .from("versions")
+            .insert({
+              prompt_id: promptId,
+              user_id: session?.user.id,
+              number,
+              ...values,
+            })
+            .select()
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          setVersions((prev) => [data, ...prev]);
+          latestVersion = data;
+
+          reset(values);
         }
 
-        const number = versions.length > 0 ? versions[0].number + 1 : 1;
-
-        const { data, error } = await supabase
-          .from("versions")
-          .insert({
-            prompt_id: promptId,
-            user_id: session?.user.id,
-            number,
-            ...values,
-          })
-          .select()
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        setVersions((prev) => [data, ...prev]);
-
-        reset(values);
+        setResponse("");
 
         // Call the run function
         const response = await stream(
@@ -186,7 +193,7 @@ export default function PromptDetailsPage() {
             method: "POST",
             body: JSON.stringify({
               prompt_id: promptId,
-              version_id: data.id,
+              version_id: latestVersion.id,
               stream: true,
             }),
             headers: {
@@ -212,13 +219,14 @@ export default function PromptDetailsPage() {
 
           setResponse((prev) => (prev += data.delta.content || ""));
         }
-      } catch {
+      } catch (error) {
+        console.error(error);
         toast.error("Oops! Something went wrong.");
       } finally {
         setSaving(false);
       }
     },
-    [promptId, reset, session, versions]
+    [formState, promptId, reset, session, versions]
   );
 
   const updateName = useCallback(
