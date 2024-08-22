@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { LuPlus, LuSave } from "react-icons/lu";
+import { LuPlay, LuPlus, LuSave } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
   SystemMessageSchema,
@@ -287,9 +287,9 @@ export default function PromptDetailsPage() {
             type="submit"
             size="sm"
             color="primary"
-            startContent={<LuSave />}
+            startContent={<LuPlay />}
           >
-            Save
+            Run
           </Button>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
