@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          role: Database["public"]["Enums"]["workspace_user_roles"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          label: string
+          role: Database["public"]["Enums"]["workspace_user_roles"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          role?: Database["public"]["Enums"]["workspace_user_roles"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keys: {
         Row: {
           created_at: string
@@ -192,6 +234,7 @@ export type Database = {
           number: number
           prompt_id: string
           provider_id: string | null
+          published_at: string | null
           temperature: number
           user_id: string
         }
@@ -204,6 +247,7 @@ export type Database = {
           number: number
           prompt_id: string
           provider_id?: string | null
+          published_at?: string | null
           temperature?: number
           user_id: string
         }
@@ -216,6 +260,7 @@ export type Database = {
           number?: number
           prompt_id?: string
           provider_id?: string | null
+          published_at?: string | null
           temperature?: number
           user_id?: string
         }
