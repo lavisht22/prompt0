@@ -18,6 +18,9 @@ import useWorkspacesStore from "stores/workspaces";
 import Name from "./components/name";
 import Response from "./components/response";
 import { stream } from "fetch-event-stream";
+import AssistantMessage, {
+  AssistantMessageSchema,
+} from "./components/assistant-message";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -27,7 +30,11 @@ type Provider = {
   name: string;
 };
 
-const MessageSchema = z.union([SystemMessageSchema, UserMessageSchema]);
+const MessageSchema = z.union([
+  SystemMessageSchema,
+  UserMessageSchema,
+  AssistantMessageSchema,
+]);
 
 const FormSchema = z.object({
   messages: z.array(MessageSchema),
@@ -325,9 +332,29 @@ export default function PromptDetailsPage() {
                 );
               }
 
+              if (field.role === "assistant") {
+                return (
+                  <Controller
+                    key={field.id}
+                    name={`messages.${index}`}
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <AssistantMessage
+                        value={
+                          field.value as z.infer<typeof AssistantMessageSchema>
+                        }
+                        onValueChange={field.onChange}
+                        isInvalid={fieldState.invalid}
+                        onRemove={() => removeMessage(index)}
+                      />
+                    )}
+                  />
+                );
+              }
+
               return null;
             })}
-            <div className="p-3">
+            <div className="flex p-3 gap-x-2">
               <Button
                 color="primary"
                 size="sm"
@@ -341,10 +368,32 @@ export default function PromptDetailsPage() {
               >
                 User
               </Button>
+              <Button
+                color="primary"
+                size="sm"
+                startContent={<LuPlus />}
+                onPress={() =>
+                  addMessage({
+                    role: "assistant",
+                    content: "",
+                  })
+                }
+              >
+                Assistant
+              </Button>
             </div>
           </div>
           <div className="flex-1 border-r">
-            <Response value={response} />
+            <Response
+              value={response}
+              onAddToConversation={() => {
+                addMessage({
+                  role: "assistant",
+                  content: response,
+                });
+                setResponse("");
+              }}
+            />
           </div>
           <div className="w-56 p-3 flex flex-col gap-8">
             <Controller

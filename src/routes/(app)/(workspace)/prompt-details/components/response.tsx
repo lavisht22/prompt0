@@ -1,7 +1,13 @@
 import { Button, Textarea } from "@nextui-org/react";
 import { LuCornerUpLeft } from "react-icons/lu";
 
-export default function Response({ value }: { value: string }) {
+export default function Response({
+  value,
+  onAddToConversation,
+}: {
+  value: string;
+  onAddToConversation: () => void;
+}) {
   return (
     <div className="p-3 flex flex-col border-b gap-2">
       <div className="flex justify-between items-center">
@@ -24,6 +30,7 @@ export default function Response({ value }: { value: string }) {
             variant="flat"
             color="primary"
             startContent={<LuCornerUpLeft />}
+            onPress={onAddToConversation}
           >
             Add to conversation
           </Button>
