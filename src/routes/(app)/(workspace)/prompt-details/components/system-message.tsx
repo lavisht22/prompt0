@@ -1,6 +1,7 @@
 import { Button, Textarea } from "@nextui-org/react";
 import { LuInfo } from "react-icons/lu";
 import { z } from "zod";
+import VariablesList from "./variables-list";
 
 export const SystemMessageSchema = z.object({
   role: z.literal("system"),
@@ -45,6 +46,7 @@ export default function SystemMessage({
         minRows={1}
         maxRows={100000}
       />
+      <VariablesList text={value.content} />
     </div>
   );
 }
