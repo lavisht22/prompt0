@@ -33,7 +33,7 @@ export default function AssistantMessage({
             size="sm"
             isIconOnly
             radius="full"
-            onPaste={onRemove}
+            onPress={onRemove}
           >
             <LuTrash2 className="w-4 h-4" />
           </Button>
