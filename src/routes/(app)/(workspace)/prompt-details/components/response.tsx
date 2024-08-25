@@ -17,7 +17,6 @@ export default function Response({
       </div>
 
       <Textarea
-        isReadOnly
         minRows={20}
         maxRows={100000}
         placeholder="Run prompt to see assistant response"

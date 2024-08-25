@@ -38,8 +38,9 @@ export default function UserMessage({
   return (
     <div
       className={cn(
-        "relative w-full inline-flex tap-highlight-transparent shadow-sm px-3 border-medium border-default-200 hover:border-default-400 rounded-medium flex-col !duration-150 focus-within:!border-primary transition-all motion-reduce:transition-none py-2",
-        isInvalid && "!border-danger-400"
+        "relative w-full inline-flex tap-highlight-transparent shadow-sm px-3 rounded-medium flex-col !duration-150  transition-all motion-reduce:transition-none py-2 bg-default-100 hover:bg-default-200 focus-within:!bg-default-100",
+        isInvalid &&
+          "!bg-danger-50 hover:!bg-danger-50 focus-within:!bg-danger-50"
       )}
     >
       <label htmlFor="system" className="block text-xs font-medium mb-2">
@@ -51,7 +52,7 @@ export default function UserMessage({
           return (
             <div>
               <ReactTextareaAutosize
-                className="outline-none w-full text-sm resize-none mb-4"
+                className="outline-none w-full text-sm resize-none mb-4 bg-transparent"
                 placeholder="Enter user message..."
                 value={part.text}
                 onChange={(e) => {
