@@ -1,7 +1,8 @@
-import { Button, Textarea } from "@nextui-org/react";
-import { useState } from "react";
-import { LuImage, LuTrash2, LuType } from "react-icons/lu";
+import { Button, cn } from "@nextui-org/react";
+import { LuTrash2 } from "react-icons/lu";
+import ReactTextareaAutosize from "react-textarea-autosize";
 import { z } from "zod";
+import VariablesList from "./variables-list";
 
 const TextPartSchema = z.object({
   type: z.literal("text"),
@@ -34,57 +35,38 @@ export default function UserMessage({
   isInvalid?: boolean;
   onRemove: () => void;
 }) {
-  const [showControls] = useState(false);
-
   return (
-    <div className="p-3 flex flex-col border-b gap-2">
-      <div className="flex justify-between items-center">
-        <div className="bg-amber-100 px-3 py-1 text-xs font-bold rounded-xl">
-          <h4>USER</h4>
-        </div>
-
-        <div className="flex items-center">
-          {showControls && (
-            <Button variant="light" size="sm" isIconOnly radius="full">
-              <LuType className="w-4 h-4" />
-            </Button>
-          )}
-          {showControls && (
-            <Button variant="light" size="sm" isIconOnly radius="full">
-              <LuImage className="w-4 h-4" />
-            </Button>
-          )}
-          <Button
-            variant="light"
-            size="sm"
-            isIconOnly
-            radius="full"
-            onPress={onRemove}
-          >
-            <LuTrash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+    <div
+      className={cn(
+        "relative w-full inline-flex tap-highlight-transparent shadow-sm px-3 border-medium border-default-200 hover:border-default-400 rounded-medium flex-col !duration-150 focus-within:!border-primary transition-all motion-reduce:transition-none py-2",
+        isInvalid && "!border-danger-400"
+      )}
+    >
+      <label htmlFor="system" className="block text-xs font-medium mb-2">
+        USER
+      </label>
 
       {value.content.map((part, index) => {
         if (part.type === "text") {
           return (
-            <Textarea
-              aria-label="User message"
-              placeholder="Enter user message..."
-              value={part.text}
-              onValueChange={(newValue) => {
-                const newContent = [...value.content];
-                newContent[index] = { type: "text", text: newValue };
-                onValueChange({
-                  ...value,
-                  content: newContent,
-                });
-              }}
-              isInvalid={isInvalid}
-              minRows={3}
-              maxRows={100000}
-            />
+            <div>
+              <ReactTextareaAutosize
+                className="outline-none w-full text-sm resize-none mb-4"
+                placeholder="Enter user message..."
+                value={part.text}
+                onChange={(e) => {
+                  const newContent = [...value.content];
+                  newContent[index] = { type: "text", text: e.target.value };
+                  onValueChange({
+                    ...value,
+                    content: newContent,
+                  });
+                }}
+                minRows={3}
+                maxRows={100000}
+              />
+              <VariablesList text={part.text} />
+            </div>
           );
         }
 
@@ -92,6 +74,18 @@ export default function UserMessage({
           return <div>Coming soon...</div>;
         }
       })}
+
+      <div className="absolute top-0 right-0">
+        <Button
+          variant="light"
+          size="sm"
+          isIconOnly
+          radius="full"
+          onPress={onRemove}
+        >
+          <LuTrash2 className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }

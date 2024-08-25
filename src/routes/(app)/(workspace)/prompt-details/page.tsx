@@ -296,7 +296,7 @@ export default function PromptDetailsPage() {
           </Button>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
-          <div className="flex-1 h-full overflow-y-auto border-r p-4 gap-4">
+          <div className="flex-1 h-full overflow-y-auto border-r p-4 space-y-4">
             {messages.map((field, index) => {
               if (field.role === "system") {
                 return (

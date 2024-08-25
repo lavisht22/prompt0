@@ -33,6 +33,7 @@ export default function SystemMessage({
 
       <ReactTextareaAutosize
         className="outline-none w-full text-sm resize-none mb-4"
+        placeholder="Set a system prompt"
         minRows={1}
         maxRows={100000}
         value={value.content}
