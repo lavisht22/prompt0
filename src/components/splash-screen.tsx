@@ -1,4 +1,4 @@
-import { Progress } from "@nextui-org/progress";
+import { Progress } from "@nextui-org/react";
 import Logo from "./logo";
 import { Card, CardBody } from "@nextui-org/react";
 import { LuAlertTriangle } from "react-icons/lu";
@@ -27,6 +27,7 @@ export default function SplashScreen({ loading, error }: Props) {
             <div className="flex space-x-2 items-center text-lg font-medium text-danger">
               <LuAlertTriangle />
               <h3>Error</h3>
+              <p>{error}</p>
             </div>
             <p>{error}</p>
           </CardBody>

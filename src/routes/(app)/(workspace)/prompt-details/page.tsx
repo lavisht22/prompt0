@@ -296,7 +296,7 @@ export default function PromptDetailsPage() {
           </Button>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
-          <div className="flex-1 h-full overflow-y-auto border-r">
+          <div className="flex-1 h-full overflow-y-auto border-r p-4 gap-4">
             {messages.map((field, index) => {
               if (field.role === "system") {
                 return (
@@ -359,7 +359,7 @@ export default function PromptDetailsPage() {
             })}
             <div className="flex p-3 gap-x-2">
               <Button
-                variant="flat"
+                variant="light"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
@@ -372,7 +372,7 @@ export default function PromptDetailsPage() {
                 User
               </Button>
               <Button
-                variant="flat"
+                variant="light"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
