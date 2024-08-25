@@ -386,7 +386,7 @@ export default function PromptDetailsPage() {
               </Button>
             </div>
           </div>
-          <div className="flex-1 border-r">
+          <div className="flex-1 border-r p-4 space-y-4">
             <Response
               value={response}
               onAddToConversation={() => {

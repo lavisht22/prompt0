@@ -36,7 +36,7 @@ export default function AssistantMessage({
 
       <ReactTextareaAutosize
         className="outline-none w-full text-sm resize-none mb-4 bg-transparent"
-        placeholder="Set a system prompt"
+        placeholder="Enter assistant message..."
         minRows={1}
         maxRows={100000}
         value={value.content}
