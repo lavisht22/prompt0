@@ -1,6 +1,8 @@
-import { Button, Textarea } from "@nextui-org/react";
+import { Button, cn } from "@nextui-org/react";
 import { LuTrash2 } from "react-icons/lu";
+import ReactTextareaAutosize from "react-textarea-autosize";
 import { z } from "zod";
+import VariablesList from "./variables-list";
 
 export const AssistantMessageSchema = z.object({
   role: z.literal("assistant"),
@@ -21,38 +23,41 @@ export default function AssistantMessage({
   onRemove: () => void;
 }) {
   return (
-    <div className="p-3 flex flex-col border-b gap-2">
-      <div className="flex justify-between items-center">
-        <div className="bg-green-100 px-3 py-1 text-xs font-bold rounded-xl">
-          <h4>ASSISTANT</h4>
-        </div>
+    <div
+      className={cn(
+        "relative w-full inline-flex tap-highlight-transparent shadow-sm px-3 border-medium border-default-200 hover:border-default-400 rounded-medium flex-col !duration-150 focus-within:!border-primary transition-all motion-reduce:transition-none py-2",
+        isInvalid && "!border-danger-400"
+      )}
+    >
+      <label htmlFor="system" className="block text-xs font-medium mb-2">
+        ASSISTANT
+      </label>
 
-        <div className="flex items-center">
-          <Button
-            variant="light"
-            size="sm"
-            isIconOnly
-            radius="full"
-            onPress={onRemove}
-          >
-            <LuTrash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-      <Textarea
-        aria-label="Assistant message"
-        placeholder="Enter assistant message..."
-        value={value.content}
-        onValueChange={(newValue) =>
-          onValueChange({
-            ...value,
-            content: newValue,
-          })
-        }
-        isInvalid={isInvalid}
+      <ReactTextareaAutosize
+        className="outline-none w-full text-sm resize-none mb-4"
+        placeholder="Set a system prompt"
         minRows={1}
         maxRows={100000}
+        value={value.content}
+        onChange={(e) =>
+          onValueChange({
+            ...value,
+            content: e.target.value,
+          })
+        }
       />
+      <VariablesList text={value.content ?? ""} />
+      <div className="absolute top-0 right-0">
+        <Button
+          variant="light"
+          size="sm"
+          isIconOnly
+          radius="full"
+          onPress={onRemove}
+        >
+          <LuTrash2 className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }
