@@ -357,7 +357,7 @@ export default function PromptDetailsPage() {
 
               return null;
             })}
-            <div className="flex p-3 gap-x-2">
+            <div className="flex">
               <Button
                 variant="light"
                 size="sm"
