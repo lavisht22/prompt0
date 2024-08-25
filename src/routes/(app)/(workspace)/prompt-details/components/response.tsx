@@ -27,8 +27,7 @@ export default function Response({
         {value.length > 0 && (
           <Button
             size="sm"
-            variant="flat"
-            color="primary"
+            variant="light"
             startContent={<LuCornerUpLeft />}
             onPress={onAddToConversation}
           >

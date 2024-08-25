@@ -7,13 +7,12 @@ export default function VariablesList({ text }: { text: string }) {
   const extracted = useMemo(() => extractVariables(text), [text]);
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 pt-1">
       {extracted.map((e) => (
         <Button
           size="sm"
           variant="flat"
           color="primary"
-          radius="full"
           startContent={<LuBraces />}
         >
           {e}

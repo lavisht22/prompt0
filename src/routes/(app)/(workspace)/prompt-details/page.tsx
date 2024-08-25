@@ -359,7 +359,7 @@ export default function PromptDetailsPage() {
             })}
             <div className="flex p-3 gap-x-2">
               <Button
-                color="primary"
+                variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
@@ -372,7 +372,7 @@ export default function PromptDetailsPage() {
                 User
               </Button>
               <Button
-                color="primary"
+                variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
