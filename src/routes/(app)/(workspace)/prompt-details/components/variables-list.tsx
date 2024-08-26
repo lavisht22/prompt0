@@ -25,7 +25,9 @@ export default function VariablesList({
             className="shrink-0 h-6 gap-1 px-2 font-medium"
             size="sm"
             variant="flat"
-            color={value === undefined ? "warning" : "success"}
+            color={
+              value === undefined || value.length === 0 ? "warning" : "success"
+            }
             startContent={<LuBraces className="w-3 h-3" />}
           >
             {e.length > 20 ? `${e.slice(0, 20)}...` : e}

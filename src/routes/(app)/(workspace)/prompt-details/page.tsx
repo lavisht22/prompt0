@@ -23,6 +23,7 @@ import AssistantMessage, {
 } from "./components/assistant-message";
 import { useHotkeys } from "react-hotkeys-hook";
 import VariablesDialog from "./components/variables-dialog";
+import { extractVaraiblesFromMessages } from "utils/variables";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -166,6 +167,23 @@ export default function PromptDetailsPage() {
           return;
         }
 
+        const variables = extractVaraiblesFromMessages(values.messages);
+
+        const cleanedVariables = new Map<string, string>();
+
+        // Check if each variable has a value
+        for (const variable of variables) {
+          const variableValue = variableValues.get(variable);
+          if (variableValue === undefined || variableValue.length === 0) {
+            setVariablesOpen(true);
+            return;
+          } else {
+            cleanedVariables.set(variable, variableValue);
+          }
+        }
+
+        setVariableValues(cleanedVariables);
+
         setSaving(true);
 
         let latestVersion = versions[0];
@@ -209,6 +227,7 @@ export default function PromptDetailsPage() {
               prompt_id: promptId,
               version_id: latestVersion.id,
               stream: true,
+              variables: Object.fromEntries(cleanedVariables),
             }),
             headers: {
               Authorization: `Bearer ${
@@ -240,7 +259,7 @@ export default function PromptDetailsPage() {
         setSaving(false);
       }
     },
-    [formState, promptId, reset, session, versions]
+    [formState.isDirty, promptId, reset, session, variableValues, versions]
   );
 
   const updateName = useCallback(
@@ -495,6 +514,7 @@ export default function PromptDetailsPage() {
         getFormValues={getValues}
         values={variableValues}
         setValues={setVariableValues}
+        onRun={() => handleSubmit(save)()}
       />
     </div>
   );

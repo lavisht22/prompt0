@@ -10,7 +10,7 @@ import {
 import { LuPlay } from "react-icons/lu";
 import { FormValues } from "../page";
 import { useEffect, useState } from "react";
-import { extractVariables } from "utils/variables";
+import { extractVaraiblesFromMessages } from "utils/variables";
 
 export default function VariablesDialog({
   isOpen,
@@ -18,37 +18,19 @@ export default function VariablesDialog({
   values,
   setValues,
   getFormValues,
+  onRun,
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   values: Map<string, string>;
   setValues: (values: Map<string, string>) => void;
   getFormValues: () => FormValues;
+  onRun: () => void;
 }) {
   const [variables, setVariables] = useState<string[]>([]);
 
   useEffect(() => {
-    const arr: string[] = [];
-
-    getFormValues().messages.forEach((message) => {
-      if (message.role === "system" || message.role === "assistant") {
-        arr.push(...extractVariables(message.content || ""));
-      }
-
-      if (message.role === "user") {
-        message.content.forEach((part) => {
-          if (part.type === "text") {
-            arr.push(...extractVariables(part.text));
-          }
-
-          if (part.type === "image_url") {
-            arr.push(...extractVariables(part.image_url.url));
-          }
-        });
-      }
-    });
-
-    setVariables([...arr]);
+    setVariables(extractVaraiblesFromMessages(getFormValues().messages));
   }, [getFormValues, isOpen]);
 
   return (
@@ -77,7 +59,19 @@ export default function VariablesDialog({
           })}
         </ModalBody>
         <ModalFooter>
-          <Button fullWidth color="primary" startContent={<LuPlay />}>
+          <Button
+            isDisabled={variables.some((variable) => {
+              const value = values.get(variable);
+              return value === undefined || value.length === 0;
+            })}
+            fullWidth
+            color="primary"
+            startContent={<LuPlay />}
+            onPress={() => {
+              onOpenChange(false);
+              onRun();
+            }}
+          >
             Run
           </Button>
         </ModalFooter>
