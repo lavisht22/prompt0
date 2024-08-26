@@ -248,8 +248,6 @@ export default function PromptDetailsPage() {
             };
           };
 
-          console.log(data);
-
           setResponse((prev) => (prev += data.delta.content || ""));
         }
       } catch (error) {
