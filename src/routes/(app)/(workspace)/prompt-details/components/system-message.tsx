@@ -15,10 +15,14 @@ export default function SystemMessage({
   value,
   onValueChange,
   isInvalid,
+  variableValues,
+  openVariablesDialog,
 }: {
   value: SystemMessage;
   onValueChange: (value: SystemMessage) => void;
   isInvalid?: boolean;
+  variableValues: Map<string, string>;
+  openVariablesDialog: () => void;
 }) {
   return (
     <div
@@ -45,7 +49,11 @@ export default function SystemMessage({
           })
         }
       />
-      <VariablesList text={value.content} />
+      <VariablesList
+        text={value.content}
+        variableValues={variableValues}
+        openVariablesDialog={openVariablesDialog}
+      />
       <div className="absolute top-0 right-0">
         <Button variant="light" size="sm" isIconOnly radius="full">
           <LuInfo className="w-4 h-4" />

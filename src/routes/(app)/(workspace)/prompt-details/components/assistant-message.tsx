@@ -16,11 +16,15 @@ export default function AssistantMessage({
   onValueChange,
   isInvalid,
   onRemove,
+  variableValues,
+  openVariablesDialog,
 }: {
   value: AssistantMessage;
   onValueChange: (value: AssistantMessage) => void;
   isInvalid?: boolean;
   onRemove: () => void;
+  variableValues: Map<string, string>;
+  openVariablesDialog: () => void;
 }) {
   return (
     <div
@@ -47,7 +51,11 @@ export default function AssistantMessage({
           })
         }
       />
-      <VariablesList text={value.content ?? ""} />
+      <VariablesList
+        text={value.content ?? ""}
+        variableValues={variableValues}
+        openVariablesDialog={openVariablesDialog}
+      />
       <div className="absolute top-0 right-0">
         <Button
           variant="light"

@@ -29,11 +29,15 @@ export default function UserMessage({
   onValueChange,
   isInvalid,
   onRemove,
+  variableValues,
+  openVariablesDialog,
 }: {
   value: UserMessage;
   onValueChange: (value: UserMessage) => void;
   isInvalid?: boolean;
   onRemove: () => void;
+  variableValues: Map<string, string>;
+  openVariablesDialog: () => void;
 }) {
   return (
     <div
@@ -66,7 +70,11 @@ export default function UserMessage({
                 minRows={3}
                 maxRows={100000}
               />
-              <VariablesList text={part.text} />
+              <VariablesList
+                text={part.text}
+                variableValues={variableValues}
+                openVariablesDialog={openVariablesDialog}
+              />
             </div>
           );
         }

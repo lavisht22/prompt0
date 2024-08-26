@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
-import { LuPlay, LuPlus } from "react-icons/lu";
+import { LuBraces, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
   SystemMessageSchema,
@@ -22,6 +22,7 @@ import AssistantMessage, {
   AssistantMessageSchema,
 } from "./components/assistant-message";
 import { useHotkeys } from "react-hotkeys-hook";
+import VariablesDialog from "./components/variables-dialog";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -45,7 +46,7 @@ const FormSchema = z.object({
   provider_id: z.string().uuid().or(z.null()),
 });
 
-type FormValues = z.infer<typeof FormSchema>;
+export type FormValues = z.infer<typeof FormSchema>;
 
 const defaultValues: FormValues = {
   messages: [
@@ -70,12 +71,17 @@ export default function PromptDetailsPage() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [name, setName] = useState("");
   const [response, setResponse] = useState("");
+  const [variablesOpen, setVariablesOpen] = useState(false);
+  const [variableValues, setVariableValues] = useState<Map<string, string>>(
+    new Map()
+  );
 
   const { promptId } = useParams<{ promptId: string }>();
-  const { handleSubmit, control, reset, formState } = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues,
-  });
+  const { handleSubmit, control, reset, formState, getValues } =
+    useForm<FormValues>({
+      resolver: zodResolver(FormSchema),
+      defaultValues,
+    });
 
   const {
     fields: messages,
@@ -258,6 +264,10 @@ export default function PromptDetailsPage() {
     [promptId]
   );
 
+  const openVariablesDialog = useCallback(() => {
+    setVariablesOpen(true);
+  }, []);
+
   useHotkeys("mod+enter", () => handleSubmit(save)(), [save]);
 
   if (loading) {
@@ -285,15 +295,20 @@ export default function PromptDetailsPage() {
             )}
           </div>
 
-          <Button
-            isLoading={saving}
-            type="submit"
-            size="sm"
-            color="primary"
-            startContent={<LuPlay />}
-          >
-            Run
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" isIconOnly onPress={() => setVariablesOpen(true)}>
+              <LuBraces />
+            </Button>
+            <Button
+              isLoading={saving}
+              type="submit"
+              size="sm"
+              color="primary"
+              startContent={<LuPlay />}
+            >
+              Run
+            </Button>
+          </div>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
           <div className="flex-1 h-full overflow-y-auto border-r p-4 space-y-4">
@@ -311,6 +326,8 @@ export default function PromptDetailsPage() {
                         }
                         onValueChange={field.onChange}
                         isInvalid={fieldState.invalid}
+                        variableValues={variableValues}
+                        openVariablesDialog={openVariablesDialog}
                       />
                     )}
                   />
@@ -329,6 +346,8 @@ export default function PromptDetailsPage() {
                         onValueChange={field.onChange}
                         isInvalid={fieldState.invalid}
                         onRemove={() => removeMessage(index)}
+                        variableValues={variableValues}
+                        openVariablesDialog={openVariablesDialog}
                       />
                     )}
                   />
@@ -349,6 +368,8 @@ export default function PromptDetailsPage() {
                         onValueChange={field.onChange}
                         isInvalid={fieldState.invalid}
                         onRemove={() => removeMessage(index)}
+                        variableValues={variableValues}
+                        openVariablesDialog={openVariablesDialog}
                       />
                     )}
                   />
@@ -468,6 +489,13 @@ export default function PromptDetailsPage() {
           </div>
         </div>
       </form>
+      <VariablesDialog
+        isOpen={variablesOpen}
+        onOpenChange={setVariablesOpen}
+        getFormValues={getValues}
+        values={variableValues}
+        setValues={setVariableValues}
+      />
     </div>
   );
 }
