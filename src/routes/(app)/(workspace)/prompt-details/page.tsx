@@ -25,6 +25,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import VariablesDialog from "./components/variables-dialog";
 import { extractVaraiblesFromMessages } from "utils/variables";
 import Params from "./components/params";
+import { generatePromptName } from "utils/prompt";
 
 type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -39,7 +40,7 @@ const FormSchema = z.object({
   model: z.string(),
   temperature: z.number().min(0).max(2),
   max_tokens: z.number().min(1).max(4095),
-  provider_id: z.string().uuid().or(z.null()),
+  provider_id: z.string().uuid(),
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),
   }),
@@ -57,7 +58,7 @@ const defaultValues: FormValues = {
   model: "gpt-4o",
   temperature: 1,
   max_tokens: 256,
-  provider_id: null,
+  provider_id: "",
   response_format: {
     type: "text",
   },
@@ -79,6 +80,7 @@ export default function PromptDetailsPage() {
   );
 
   const { promptId } = useParams<{ promptId: string }>();
+
   const { handleSubmit, control, reset, formState, getValues } =
     useForm<FormValues>({
       resolver: zodResolver(FormSchema),
@@ -102,6 +104,7 @@ export default function PromptDetailsPage() {
         }
 
         if (promptId === "create") {
+          setLoading(false);
           return;
         }
 
@@ -153,7 +156,7 @@ export default function PromptDetailsPage() {
   const save = useCallback(
     async (values: FormValues) => {
       try {
-        if (!promptId || !session) {
+        if (!promptId || !session || !activeWorkspace) {
           return;
         }
 
@@ -178,9 +181,45 @@ export default function PromptDetailsPage() {
 
         let latestVersion = versions[0];
 
+        let promptIdToBeUsed: string = promptId;
+
         if (formState.isDirty || !latestVersion) {
           if (promptId === "create") {
-            return;
+            let nameToBeUsed = name;
+
+            if (name === "") {
+              const { name: generatedName } = await generatePromptName(
+                values.messages
+              );
+
+              nameToBeUsed = generatedName;
+            }
+
+            setName(nameToBeUsed);
+
+            const { data: createdPrompt, error: createPromptError } =
+              await supabase
+                .from("prompts")
+                .insert({
+                  name: nameToBeUsed,
+                  workspace_id: activeWorkspace.id,
+                  user_id: session?.user.id,
+                })
+                .select()
+                .single();
+
+            if (createPromptError) {
+              throw createPromptError;
+            }
+
+            // Update the prompt id without navigating
+            window.history.replaceState(
+              null,
+              "New Page Title",
+              `/${activeWorkspace.slug}/prompts/${createdPrompt.id}`
+            );
+
+            promptIdToBeUsed = createdPrompt.id;
           }
 
           const number = versions.length > 0 ? versions[0].number + 1 : 1;
@@ -188,7 +227,7 @@ export default function PromptDetailsPage() {
           const { data, error } = await supabase
             .from("versions")
             .insert({
-              prompt_id: promptId,
+              prompt_id: promptIdToBeUsed,
               user_id: session?.user.id,
               number,
               ...values,
@@ -214,7 +253,7 @@ export default function PromptDetailsPage() {
           {
             method: "POST",
             body: JSON.stringify({
-              prompt_id: promptId,
+              prompt_id: promptIdToBeUsed,
               version_id: latestVersion.id,
               stream: true,
               variables: Object.fromEntries(cleanedVariables),
@@ -247,7 +286,15 @@ export default function PromptDetailsPage() {
         setSaving(false);
       }
     },
-    [formState.isDirty, promptId, reset, session, variableValues, versions]
+    [
+      activeWorkspace,
+      formState.isDirty,
+      promptId,
+      reset,
+      session,
+      variableValues,
+      versions,
+    ]
   );
 
   const openVariablesDialog = useCallback(() => {
@@ -267,7 +314,12 @@ export default function PromptDetailsPage() {
 
   return (
     <div className="h-full">
-      <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
+      <form
+        className="h-full flex flex-col"
+        onSubmit={handleSubmit(save, (atg) => {
+          console.log(atg);
+        })}
+      >
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center">
             <h2 className="font-medium">Prompts</h2>

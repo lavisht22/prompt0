@@ -30,14 +30,15 @@ export default function Name({
       if (!promptId) {
         return;
       }
-
       setLoading(true);
 
-      await supabase
-        .from("prompts")
-        .update({ name: internalValue, updated_at: new Date().toISOString() })
-        .eq("id", promptId)
-        .throwOnError();
+      if (promptId !== "create") {
+        await supabase
+          .from("prompts")
+          .update({ name: internalValue, updated_at: new Date().toISOString() })
+          .eq("id", promptId)
+          .throwOnError();
+      }
 
       onValueChange(internalValue);
       onClose();
@@ -60,7 +61,11 @@ export default function Name({
         className="text-base font-normal"
         onPress={onOpen}
       >
-        {value}
+        {value === "" ? (
+          <span className="text-default-400">Untitled Prompt</span>
+        ) : (
+          value
+        )}
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
@@ -69,7 +74,7 @@ export default function Name({
             <Input
               isInvalid={internalValue.length === 0}
               variant="flat"
-              placeholder="Name"
+              placeholder="Untitled Prompt"
               value={internalValue}
               onValueChange={setInternalValue}
             />
