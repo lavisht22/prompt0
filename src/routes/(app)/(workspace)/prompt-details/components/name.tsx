@@ -8,17 +8,45 @@ import {
   useDisclosure,
   Input,
 } from "@nextui-org/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import supabase from "utils/supabase";
 
 export default function Name({
   value,
   onValueChange,
+  promptId,
 }: {
   value: string;
   onValueChange: (value: string) => void;
+  promptId: string;
 }) {
   const { isOpen, onOpenChange, onOpen, onClose } = useDisclosure();
   const [internalValue, setInternalValue] = useState(value);
+  const [loading, setLoading] = useState(false);
+
+  const updateName = useCallback(async () => {
+    try {
+      if (!promptId) {
+        return;
+      }
+
+      setLoading(true);
+
+      await supabase
+        .from("prompts")
+        .update({ name: internalValue, updated_at: new Date().toISOString() })
+        .eq("id", promptId)
+        .throwOnError();
+
+      onValueChange(internalValue);
+      onClose();
+    } catch {
+      toast.error("Oops! Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  }, [internalValue, onClose, onValueChange, promptId]);
 
   useEffect(() => {
     setInternalValue(value);
@@ -53,10 +81,8 @@ export default function Name({
             <Button
               color="primary"
               isDisabled={internalValue.length === 0}
-              onPress={() => {
-                onValueChange(internalValue);
-                onClose();
-              }}
+              onPress={updateName}
+              isLoading={loading}
             >
               Save
             </Button>

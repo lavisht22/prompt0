@@ -244,27 +244,6 @@ export default function PromptDetailsPage() {
     [formState.isDirty, promptId, reset, session, variableValues, versions]
   );
 
-  const updateName = useCallback(
-    async (newName: string) => {
-      try {
-        if (!promptId) {
-          return;
-        }
-
-        await supabase
-          .from("prompts")
-          .update({ name: newName, updated_at: new Date().toISOString() })
-          .eq("id", promptId)
-          .throwOnError();
-
-        setName(newName);
-      } catch {
-        toast.error("Oops! Something went wrong.");
-      }
-    },
-    [promptId]
-  );
-
   const openVariablesDialog = useCallback(() => {
     setVariablesOpen(true);
   }, []);
@@ -275,6 +254,11 @@ export default function PromptDetailsPage() {
     return <FullSpinner />;
   }
 
+  if (!promptId) {
+    // TODO: Redirect to the prompts page
+    return null;
+  }
+
   return (
     <div className="h-full">
       <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
@@ -282,7 +266,7 @@ export default function PromptDetailsPage() {
           <div className="flex items-center">
             <h2 className="font-medium">Prompts</h2>
             <p className="font-medium ml-2">{">"}</p>
-            <Name value={name} onValueChange={updateName} />
+            <Name value={name} onValueChange={setName} promptId={promptId} />
 
             {versions.length > 0 && (
               <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
