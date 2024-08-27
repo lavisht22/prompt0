@@ -289,6 +289,7 @@ export default function PromptDetailsPage() {
     [
       activeWorkspace,
       formState.isDirty,
+      name,
       promptId,
       reset,
       session,
