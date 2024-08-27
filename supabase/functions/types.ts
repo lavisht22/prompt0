@@ -235,6 +235,7 @@ export type Database = {
           prompt_id: string
           provider_id: string | null
           published_at: string | null
+          response_format: Json
           temperature: number
           user_id: string
         }
@@ -248,6 +249,7 @@ export type Database = {
           prompt_id: string
           provider_id?: string | null
           published_at?: string | null
+          response_format?: Json
           temperature?: number
           user_id: string
         }
@@ -261,6 +263,7 @@ export type Database = {
           prompt_id?: string
           provider_id?: string | null
           published_at?: string | null
+          response_format?: Json
           temperature?: number
           user_id?: string
         }

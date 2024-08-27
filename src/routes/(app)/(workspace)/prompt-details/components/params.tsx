@@ -75,6 +75,29 @@ export default function Params({ control }: { control: Control<FormValues> }) {
       />
 
       <Controller
+        name="response_format.type"
+        control={control}
+        render={({ field, fieldState }) => (
+          <Select
+            label="Response Format"
+            isInvalid={fieldState.invalid}
+            selectedKeys={new Set([field.value || ""])}
+            onSelectionChange={(selectedKeys) => {
+              const arr = Array.from(selectedKeys);
+              field.onChange(arr[0]);
+            }}
+          >
+            <SelectItem key="text" value="text">
+              text
+            </SelectItem>
+            <SelectItem key="json_object" value="json_object">
+              json_object
+            </SelectItem>
+          </Select>
+        )}
+      />
+
+      <Controller
         name="temperature"
         control={control}
         render={({ field }) => (

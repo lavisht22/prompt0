@@ -88,6 +88,7 @@ export type Version = {
     model: string;
     max_tokens: number;
     temperature: number;
+    response_format: Json;
 };
 
 export async function generate(
@@ -138,6 +139,12 @@ export async function generate(
                     max_tokens: version.max_tokens,
                     temperature: version.temperature,
                     stream: true,
+                    response_format: version
+                        .response_format as unknown as (
+                            | OpenAI.ResponseFormatText
+                            | OpenAI.ResponseFormatJSONObject
+                            | OpenAI.ResponseFormatJSONSchema
+                        ),
                 });
 
                 for await (const chunk of response) {
@@ -187,6 +194,12 @@ export async function generate(
             max_tokens: version.max_tokens,
             temperature: version.temperature,
             stream: false,
+            response_format: version
+                .response_format as unknown as (
+                    | OpenAI.ResponseFormatText
+                    | OpenAI.ResponseFormatJSONObject
+                    | OpenAI.ResponseFormatJSONSchema
+                ),
         });
 
         return SuccessResponse({

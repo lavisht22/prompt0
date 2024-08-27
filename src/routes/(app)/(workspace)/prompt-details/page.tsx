@@ -40,6 +40,9 @@ const FormSchema = z.object({
   temperature: z.number().min(0).max(2),
   max_tokens: z.number().min(1).max(4095),
   provider_id: z.string().uuid().or(z.null()),
+  response_format: z.object({
+    type: z.union([z.literal("json_object"), z.literal("text")]),
+  }),
 });
 
 export type FormValues = z.infer<typeof FormSchema>;
@@ -55,6 +58,9 @@ const defaultValues: FormValues = {
   temperature: 1,
   max_tokens: 256,
   provider_id: null,
+  response_format: {
+    type: "text",
+  },
 };
 
 export default function PromptDetailsPage() {
