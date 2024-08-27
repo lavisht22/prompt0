@@ -12,6 +12,7 @@ import WorkspaceLayout from "./routes/(app)/(workspace)/layout";
 import PromptsPage from "./routes/(app)/(workspace)/prompts/page";
 import ProvidersPage from "./routes/(app)/(workspace)/providers/page";
 import PromptDetailsPage from "routes/(app)/(workspace)/prompt-details/page";
+import { ThemeProvider } from "next-themes";
 
 const router = createBrowserRouter([
   {
@@ -63,10 +64,10 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <>
+    <ThemeProvider attribute="class" defaultTheme="light">
       <RouterProvider router={router} />
       <Toaster />
-    </>
+    </ThemeProvider>
   );
 }
 

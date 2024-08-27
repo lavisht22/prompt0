@@ -302,7 +302,7 @@ export default function PromptDetailsPage() {
           </div>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
-          <div className="flex-1 h-full overflow-y-auto border-r p-4 space-y-4">
+          <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
             {messages.map((field, index) => {
               if (field.role === "system") {
                 return (
@@ -398,8 +398,9 @@ export default function PromptDetailsPage() {
               </Button>
             </div>
           </div>
-          <div className="flex-1 border-r p-4 space-y-4">
+          <div className="basis-2/5 border-r p-4 space-y-4">
             <Response
+              type={getValues().response_format.type}
               value={response}
               onAddToConversation={() => {
                 addMessage({
@@ -410,7 +411,7 @@ export default function PromptDetailsPage() {
               }}
             />
           </div>
-          <div className="w-56 p-3 flex flex-col gap-8">
+          <div className="basis-1/5 w-56 p-3 flex flex-col gap-4">
             <Params control={control} />
           </div>
         </div>
