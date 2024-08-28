@@ -27,6 +27,7 @@ import { extractVaraiblesFromMessages } from "utils/variables";
 import Params from "./components/params";
 import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
+import History from "./components/history";
 
 export type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -356,11 +357,21 @@ export default function PromptDetailsPage() {
             )}
           </div>
 
-          <div className="flex gap-2">
-            <Button size="sm" isIconOnly onPress={() => setVariablesOpen(true)}>
-              <LuBraces />
+          <div className="flex">
+            <History
+              versions={versions}
+              setActiveVersionId={setActiveVersionId}
+            />
+            <Button
+              size="sm"
+              variant="light"
+              isIconOnly
+              onPress={() => setVariablesOpen(true)}
+            >
+              <LuBraces className="w-4 h-4" />
             </Button>
             <Button
+              className="mx-2"
               isDisabled={saving}
               type="submit"
               size="sm"

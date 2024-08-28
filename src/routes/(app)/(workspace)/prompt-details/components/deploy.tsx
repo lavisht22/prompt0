@@ -76,25 +76,27 @@ export default function Deploy({
       onOpenChange={onOpenChange}
     >
       <PopoverTrigger>
-        <Button size="sm" color="primary">
+        <Button size="sm" color="primary" startContent={<LuRocket />}>
           Deploy
         </Button>
       </PopoverTrigger>
       <PopoverContent>
         {activeVersion?.published_at ? (
-          <div className="flex items-center p-4">
-            <LuCheckCircle className="w-5 h-5 text-success-500 mr-2" />
-            <span>This version is already deployed.</span>
+          <div className="flex flex-col p-4 max-w-96 gap-y-4">
+            <div className="flex items-center">
+              <LuCheckCircle className="w-5 h-5 text-success-500 mr-2" />
+              <span>This version is already deployed.</span>
+            </div>
           </div>
         ) : (
-          <div className="flex flex-col p-4 max-w-96">
-            <p className="mb-4">
+          <div className="flex flex-col p-4 max-w-96 gap-y-4">
+            <p>
               Deploying this version will replace any previously deployed
               version of this prompt.
             </p>
             <Button
               color="primary"
-              startContent={<LuRocket className="w-4 h-4" />}
+              startContent={<LuRocket />}
               onPress={deploy}
               isLoading={loading}
             >

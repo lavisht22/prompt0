@@ -34,7 +34,12 @@ export default function VariablesDialog({
   }, [getFormValues, isOpen]);
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} scrollBehavior="inside">
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      scrollBehavior="inside"
+      backdrop="blur"
+    >
       <ModalContent>
         <ModalHeader>Variables</ModalHeader>
         <ModalBody className="flex flex-col gap-4">
