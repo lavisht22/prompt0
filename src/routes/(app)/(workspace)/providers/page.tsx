@@ -3,10 +3,11 @@ import supabase from "utils/supabase";
 import useWorkspacesStore from "stores/workspaces";
 import useProvidersStore, { Provider } from "stores/providers";
 import toast from "react-hot-toast";
-import { Button, Card, CardBody, Input } from "@nextui-org/react";
+import { Button, Input } from "@nextui-org/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
 import ProviderModal from "./components/provider-modal";
 import ProviderIcon from "components/provider-icon";
+import { Link } from "react-router-dom";
 
 export default function ProvidersPage() {
   const { activeWorkspace } = useWorkspacesStore();
@@ -76,7 +77,7 @@ export default function ProvidersPage() {
           variant="flat"
           className="bg-background"
           classNames={{
-            inputWrapper: "bg-background border-b px-6",
+            inputWrapper: "bg-background border-b px-4",
           }}
           radius="none"
           aria-label="Search"
@@ -85,24 +86,19 @@ export default function ProvidersPage() {
         />
 
         {providers.map((provider) => (
-          <Card
-            isHoverable
+          <Link
+            to={`/${activeWorkspace?.slug}/providers/${provider.id}`}
             key={provider.id}
-            radius="none"
-            className="w-full shadow-none"
-            onPress={() => setActiveProvider(provider)}
-            isPressable
+            className="w-full flex flex-row justify-between items-center px-4 py-4 cursor-default hover:bg-default-100"
           >
-            <CardBody className="flex flex-row justify-between items-center px-6 py-4">
-              <div className="flex items-center space-x-3">
-                <ProviderIcon type={provider.type} className="w-6 h-6" />
-                <h4 className="text-sm">{provider.name}</h4>
-              </div>
-              <div>
-                <span className="block text-xs text-default-500">Aug 10</span>
-              </div>
-            </CardBody>
-          </Card>
+            <div className="flex items-center space-x-3">
+              <ProviderIcon type={provider.type} className="w-6 h-6" />
+              <h4 className="text-sm">{provider.name}</h4>
+            </div>
+            <div>
+              <span className="block text-xs text-default-500">Aug 10</span>
+            </div>
+          </Link>
         ))}
       </div>
       <ProviderModal />
