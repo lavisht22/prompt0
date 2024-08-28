@@ -333,9 +333,7 @@ export default function PromptDetailsPage() {
     <div className="h-full">
       <form
         className="h-full flex flex-col"
-        onSubmit={handleSubmit(save, (atg) => {
-          console.log(atg);
-        })}
+        onSubmit={handleSubmit(save)}
       >
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center">
