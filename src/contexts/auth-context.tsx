@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import supabase from "../utils/supabase";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useNavigation } from "react-router-dom";
 import SplashScreen from "../components/splash-screen";
 
 interface AuthContextT {
@@ -20,7 +20,7 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const navigation = useNavigation();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,14 +37,22 @@ export default function AuthProvider({
         } = await supabase.auth.getUser();
 
         if (!user) {
-          navigate(`/sign-in?returnTo=${encodeURIComponent(pathname)}`);
+          navigate(
+            `/sign-in?returnTo=${encodeURIComponent(
+              navigation.location?.pathname || ""
+            )}`
+          );
           return;
         }
 
         supabase.auth.onAuthStateChange((event) => {
           if (event === "SIGNED_OUT") {
             setUser(null);
-            navigate(`/sign-in?returnTo=${encodeURIComponent(pathname)}`);
+            navigate(
+              `/sign-in?returnTo=${encodeURIComponent(
+                navigation.location?.pathname || ""
+              )}`
+            );
           }
         });
 
@@ -58,7 +66,7 @@ export default function AuthProvider({
     };
 
     init();
-  }, [navigate, pathname, setUser]);
+  }, [navigate, navigation.location?.pathname, setUser]);
 
   if (loading || error) {
     return <SplashScreen loading={loading} error={error} />;

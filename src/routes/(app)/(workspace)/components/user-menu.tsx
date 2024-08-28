@@ -6,10 +6,16 @@ import {
   PopoverContent,
 } from "@nextui-org/react";
 import { useAuth } from "contexts/auth-context";
+import { useCallback } from "react";
 import { LuChevronRight, LuLogOut, LuSettings2, LuUser } from "react-icons/lu";
+import supabase from "utils/supabase";
 
 export default function UserMenu() {
   const { user } = useAuth();
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
 
   return (
     <Popover backdrop="blur" placement="right-end">
@@ -63,6 +69,7 @@ export default function UserMenu() {
             startContent={<LuLogOut />}
             color="danger"
             className="justify-start px-2"
+            onPress={logout}
           >
             Logout
           </Button>

@@ -20,7 +20,6 @@ export default function Sidebar() {
   const { activeWorkspace } = useWorkspacesStore();
   const { pathname } = useLocation();
 
-  console.log(pathname);
   return (
     <div className="w-56 h-full flex flex-col items-start justify-between px-2 py-4">
       <div className="flex flex-col w-full">
@@ -45,7 +44,9 @@ export default function Sidebar() {
           })}
         </div>
       </div>
-      <UserMenu />
+      <div className="flex flex-col gap-2 w-full">
+        <UserMenu />
+      </div>
     </div>
   );
 }
