@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@nextui-org/react";
+import { Button, Kbd } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { LuBraces, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
@@ -7,7 +7,7 @@ import SystemMessage, {
   SystemMessageSchema,
 } from "./components/system-message";
 import UserMessage, { UserMessageSchema } from "./components/user-message";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import supabase from "utils/supabase";
 import { Database } from "supabase/functions/types";
@@ -26,8 +26,9 @@ import VariablesDialog from "./components/variables-dialog";
 import { extractVaraiblesFromMessages } from "utils/variables";
 import Params from "./components/params";
 import { generatePromptName } from "utils/prompt";
+import Deploy from "./components/deploy";
 
-type Version = Database["public"]["Tables"]["versions"]["Row"];
+export type Version = Database["public"]["Tables"]["versions"]["Row"];
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -71,6 +72,7 @@ export default function PromptDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [versions, setVersions] = useState<Version[]>([]);
+  const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [response, setResponse] = useState("");
@@ -86,6 +88,16 @@ export default function PromptDetailsPage() {
       resolver: zodResolver(FormSchema),
       defaultValues,
     });
+
+  const activeVersion = useMemo(() => {
+    return versions.find((v) => v.id === activeVersionId) || null;
+  }, [activeVersionId, versions]);
+
+  useEffect(() => {
+    if (activeVersion !== null) {
+      reset(activeVersion as unknown as FormValues);
+    }
+  }, [activeVersion, reset]);
 
   const {
     fields: messages,
@@ -133,16 +145,7 @@ export default function PromptDetailsPage() {
         }
 
         setVersions(versions);
-
-        const latestVersion =
-          versions.length > 0
-            ? {
-                ...versions[0],
-                messages: versions[0].messages as FormValues["messages"],
-              }
-            : defaultValues;
-
-        reset(latestVersion as FormValues);
+        setActiveVersionId(versions[0].id);
 
         setLoading(false);
       } catch {
@@ -152,6 +155,49 @@ export default function PromptDetailsPage() {
 
     init();
   }, [activeWorkspace, promptId, reset]);
+
+  const generate = useCallback(
+    async (
+      promptId: string,
+      versionId: string,
+      variables: Map<string, string>
+    ) => {
+      setResponse("");
+
+      const response = await stream(
+        "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            prompt_id: promptId,
+            version_id: versionId,
+            stream: true,
+            variables: Object.fromEntries(variables),
+          }),
+          headers: {
+            Authorization: `Bearer ${
+              import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
+            }`,
+          },
+        }
+      );
+
+      for await (const event of response) {
+        if (!event.data) {
+          continue;
+        }
+
+        const data = JSON.parse(event.data) as {
+          delta: {
+            content: string | null;
+          };
+        };
+
+        setResponse((prev) => (prev += data.delta.content || ""));
+      }
+    },
+    []
+  );
 
   const save = useCallback(
     async (values: FormValues) => {
@@ -179,11 +225,10 @@ export default function PromptDetailsPage() {
 
         setSaving(true);
 
-        let latestVersion = versions[0];
-
         let promptIdToBeUsed: string = promptId;
+        let versionIdToBeUsed: string = activeVersionId || "";
 
-        if (formState.isDirty || !latestVersion) {
+        if (formState.isDirty) {
           if (promptId === "create") {
             let nameToBeUsed = name;
 
@@ -222,7 +267,7 @@ export default function PromptDetailsPage() {
             promptIdToBeUsed = createdPrompt.id;
           }
 
-          const number = versions.length > 0 ? versions[0].number + 1 : 1;
+          const number = Math.max(...versions.map((v) => v.number), 0) + 1;
 
           const { data, error } = await supabase
             .from("versions")
@@ -240,45 +285,13 @@ export default function PromptDetailsPage() {
           }
 
           setVersions((prev) => [data, ...prev]);
-          latestVersion = data;
-
+          setActiveVersionId(data.id);
+          versionIdToBeUsed = data.id;
           reset(values);
         }
 
-        setResponse("");
-
-        // Call the run function
-        const response = await stream(
-          "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              prompt_id: promptIdToBeUsed,
-              version_id: latestVersion.id,
-              stream: true,
-              variables: Object.fromEntries(cleanedVariables),
-            }),
-            headers: {
-              Authorization: `Bearer ${
-                import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
-              }`,
-            },
-          }
-        );
-
-        for await (const event of response) {
-          if (!event.data) {
-            continue;
-          }
-
-          const data = JSON.parse(event.data) as {
-            delta: {
-              content: string | null;
-            };
-          };
-
-          setResponse((prev) => (prev += data.delta.content || ""));
-        }
+        // Call the generate function
+        await generate(promptIdToBeUsed, versionIdToBeUsed, cleanedVariables);
       } catch (error) {
         console.error(error);
         toast.error("Oops! Something went wrong.");
@@ -287,8 +300,10 @@ export default function PromptDetailsPage() {
       }
     },
     [
+      activeVersionId,
       activeWorkspace,
       formState.isDirty,
+      generate,
       name,
       promptId,
       reset,
@@ -327,9 +342,11 @@ export default function PromptDetailsPage() {
             <p className="font-medium ml-2">{">"}</p>
             <Name value={name} onValueChange={setName} promptId={promptId} />
 
-            {versions.length > 0 && (
+            {activeVersion && (
               <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
-                <span className="text-xs font-bold">v{versions[0].number}</span>
+                <span className="text-xs font-bold">
+                  v{activeVersion.number}
+                </span>
               </div>
             )}
             {formState.isDirty && (
@@ -344,14 +361,25 @@ export default function PromptDetailsPage() {
               <LuBraces />
             </Button>
             <Button
-              isLoading={saving}
+              isDisabled={saving}
               type="submit"
               size="sm"
               color="primary"
               startContent={<LuPlay />}
+              endContent={
+                <Kbd
+                  className="text-xs bg-opacity-20 shadow-none text-default"
+                  keys={["command", "enter"]}
+                />
+              }
             >
               Run
             </Button>
+            <Deploy
+              activeVersionId={activeVersionId}
+              versions={versions}
+              setVersions={setVersions}
+            />
           </div>
         </div>
         <div className="flex-1 flex overflow-y-hidden ">
