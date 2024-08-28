@@ -96,10 +96,10 @@ export default function ProvidersPage() {
             <CardBody className="flex flex-row justify-between items-center px-6 py-4">
               <div className="flex items-center space-x-3">
                 <ProviderIcon type={provider.type} className="w-6 h-6" />
-                <h4>{provider.name}</h4>
+                <h4 className="text-sm">{provider.name}</h4>
               </div>
               <div>
-                <span className="block text-sm text-default-500">Aug 10</span>
+                <span className="block text-xs text-default-500">Aug 10</span>
               </div>
             </CardBody>
           </Card>
