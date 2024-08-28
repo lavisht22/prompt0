@@ -387,6 +387,7 @@ export default function PromptDetailsPage() {
               Run
             </Button>
             <Deploy
+              isDirty={formState.isDirty}
               activeVersionId={activeVersionId}
               versions={versions}
               setVersions={setVersions}

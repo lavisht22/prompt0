@@ -9,13 +9,15 @@ import { Version } from "../page";
 import { useCallback, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import supabase from "utils/supabase";
-import { LuCheckCircle, LuRocket } from "react-icons/lu";
+import { LuCheckCircle, LuRocket, LuAlertCircle } from "react-icons/lu";
 
 export default function Deploy({
+  isDirty,
   activeVersionId,
   versions,
   setVersions,
 }: {
+  isDirty: boolean;
   activeVersionId: string | null;
   versions: Version[];
   setVersions: (versions: Version[]) => void;
@@ -81,11 +83,20 @@ export default function Deploy({
         </Button>
       </PopoverTrigger>
       <PopoverContent>
-        {activeVersion?.published_at ? (
+        {isDirty ? (
           <div className="flex flex-col p-4 max-w-96 gap-y-4">
-            <div className="flex items-center">
+            <div className="flex">
+              <LuAlertCircle className="w-5 h-5 text-danger-500 mr-2" />
+              <p className="flex-1">
+                Please run your prompt once before deploy.
+              </p>
+            </div>
+          </div>
+        ) : activeVersion?.published_at ? (
+          <div className="flex flex-col p-4 max-w-96 gap-y-4">
+            <div className="flex">
               <LuCheckCircle className="w-5 h-5 text-success-500 mr-2" />
-              <span>This version is already deployed.</span>
+              <p className="flex-1">This version is already deployed.</p>
             </div>
           </div>
         ) : (
