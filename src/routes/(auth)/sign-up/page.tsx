@@ -9,6 +9,7 @@ import supabase from "../../../utils/supabase";
 import toast from "react-hot-toast";
 
 const FormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters long"),
 });
@@ -27,10 +28,18 @@ export default function SignUpPage() {
     },
   });
 
-  const signup = useCallback(async ({ email, password }: FormValues) => {
+  const signup = useCallback(async ({ name, email, password }: FormValues) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
 
       if (error) {
         throw error;
@@ -59,15 +68,27 @@ export default function SignUpPage() {
         </div>
       ) : (
         <>
-          <form className="space-y-10" onSubmit={handleSubmit(signup)}>
+          <form className="space-y-4" onSubmit={handleSubmit(signup)}>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Name"
+                  placeholder="John Doe"
+                  autoComplete="name"
+                  errorMessage={fieldState.error?.message}
+                  isInvalid={fieldState.invalid}
+                  {...field}
+                />
+              )}
+            />
             <Controller
               name="email"
               control={control}
               render={({ field, fieldState }) => (
                 <Input
-                  variant="bordered"
                   label="Email"
-                  labelPlacement="outside"
                   placeholder="you@example.com"
                   autoComplete="email"
                   errorMessage={fieldState.error?.message}
@@ -81,9 +102,7 @@ export default function SignUpPage() {
               control={control}
               render={({ field, fieldState }) => (
                 <Input
-                  variant="bordered"
                   label="Password"
-                  labelPlacement="outside"
                   type="password"
                   placeholder="••••••••••••••"
                   autoComplete="new-password"

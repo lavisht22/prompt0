@@ -58,15 +58,13 @@ export default function SignInPage() {
         <h2>Sign in to your account</h2>
       </div>
 
-      <form className="space-y-10" onSubmit={handleSubmit(signin)}>
+      <form className="space-y-4" onSubmit={handleSubmit(signin)}>
         <Controller
           name="email"
           control={control}
           render={({ field, fieldState }) => (
             <Input
-              variant="bordered"
               label="Email"
-              labelPlacement="outside"
               placeholder="you@example.com"
               autoComplete="email"
               errorMessage={fieldState.error?.message}
@@ -80,9 +78,7 @@ export default function SignInPage() {
           control={control}
           render={({ field, fieldState }) => (
             <Input
-              variant="bordered"
               label="Password"
-              labelPlacement="outside"
               type="password"
               placeholder="••••••••••••••"
               autoComplete="new-password"

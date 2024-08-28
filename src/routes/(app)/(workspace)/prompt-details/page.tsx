@@ -481,7 +481,7 @@ export default function PromptDetailsPage() {
               </Button>
             </div>
           </div>
-          <div className="basis-2/5 border-r p-4 space-y-4">
+          <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
             <Response
               type={getValues().response_format.type}
               value={response}

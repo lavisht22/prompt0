@@ -9,6 +9,9 @@ export default {
   ],
   theme: {
     extend: {},
+    fontFamily: {
+      mono: ["ui-monospace", "Martian Mono"],
+    },
   },
   darkMode: "class",
   plugins: [nextui()],
