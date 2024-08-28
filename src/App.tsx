@@ -1,6 +1,11 @@
 import "./App.css";
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Outlet,
+  RouterProvider,
+  useNavigate,
+} from "react-router-dom";
 
 import HomePage from "./routes/(app)/home/page";
 import SignInPage from "./routes/(auth)/sign-in/page";
@@ -13,62 +18,75 @@ import PromptsPage from "./routes/(app)/(workspace)/prompts/page";
 import ProvidersPage from "./routes/(app)/(workspace)/providers/page";
 import PromptDetailsPage from "routes/(app)/(workspace)/prompt-details/page";
 import { ThemeProvider } from "next-themes";
+import { NextUIProvider } from "@nextui-org/react";
 
+const RootLayout = () => {
+  const navigate = useNavigate();
+
+  return (
+    <NextUIProvider navigate={navigate}>
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <Outlet />
+        <Toaster />
+      </ThemeProvider>
+    </NextUIProvider>
+  );
+};
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <AppLayout />,
+    element: <RootLayout />,
     children: [
       {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: ":workspaceSlug",
-        element: <WorkspaceLayout />,
+        path: "/",
+        element: <AppLayout />,
         children: [
           {
-            path: "prompts",
-            element: <PromptsPage />,
+            index: true,
+            element: <HomePage />,
           },
           {
-            path: "prompts/:promptId",
-            element: <PromptDetailsPage />,
-          },
-          {
-            path: "providers",
-            element: <ProvidersPage />,
-          },
-          {
-            path: "logs",
-            element: <div>Logs Page</div>,
+            path: ":workspaceSlug",
+            element: <WorkspaceLayout />,
+            children: [
+              {
+                path: "prompts",
+                element: <PromptsPage />,
+              },
+              {
+                path: "prompts/:promptId",
+                element: <PromptDetailsPage />,
+              },
+              {
+                path: "providers",
+                element: <ProvidersPage />,
+              },
+              {
+                path: "logs",
+                element: <div>Logs Page</div>,
+              },
+            ],
           },
         ],
       },
-    ],
-  },
-  {
-    element: <AuthLayout />,
-    children: [
       {
-        path: "/sign-in",
-        element: <SignInPage />,
-      },
-      {
-        path: "/sign-up",
-        element: <SignUpPage />,
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "/sign-in",
+            element: <SignInPage />,
+          },
+          {
+            path: "/sign-up",
+            element: <SignUpPage />,
+          },
+        ],
       },
     ],
   },
 ]);
 
 function App() {
-  return (
-    <ThemeProvider attribute="class" defaultTheme="light">
-      <RouterProvider router={router} />
-      <Toaster />
-    </ThemeProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

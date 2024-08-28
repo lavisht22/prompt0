@@ -9,16 +9,13 @@ import SplashScreen from "../../../components/splash-screen";
 
 export default function WorkspaceLayout() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
+
   const { workspaces, setWorkspaces, activeWorkspace, setActiveWorkspace } =
     useWorkspaceStore();
 
   useEffect(() => {
     const init = async () => {
       try {
-        if (workspaces.length) return;
-
-        if (!workspaceSlug) return;
-
         const { data, error } = await supabase.from("workspaces").select("*");
 
         if (error) {
@@ -26,23 +23,33 @@ export default function WorkspaceLayout() {
         }
 
         setWorkspaces(data);
-
-        const activeWorkspace = data.find(
-          (workspace) => workspace.slug === workspaceSlug
-        );
-
-        if (!activeWorkspace) {
-          throw new Error("Workspace not found.");
-        }
-
-        setActiveWorkspace(activeWorkspace);
       } catch {
         toast.error("Oops! Something went wrong.");
       }
     };
 
     init();
-  }, [setActiveWorkspace, setWorkspaces, workspaceSlug, workspaces.length]);
+  }, [setWorkspaces]);
+
+  useEffect(() => {
+    try {
+      if (workspaces.length === 0) return;
+
+      if (!workspaceSlug) return;
+
+      const activeWorkspace = workspaces.find(
+        (workspace) => workspace.slug === workspaceSlug
+      );
+
+      if (!activeWorkspace) {
+        throw new Error("Workspace not found.");
+      }
+
+      setActiveWorkspace(activeWorkspace);
+    } catch {
+      toast.error("Oops! Something went wrong.");
+    }
+  }, [setActiveWorkspace, workspaceSlug, workspaces]);
 
   if (!activeWorkspace) {
     return <SplashScreen loading />;
