@@ -2,7 +2,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Input, Select, SelectItem } from "@nextui-org/react";
 import FullSpinner from "components/full-spinner";
 import ProviderIcon from "components/provider-icon";
-import { useAuth } from "contexts/auth-context";
 import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -35,7 +34,6 @@ const defaultValues: FormValues = {
 };
 
 export default function ProviderDetailsPage() {
-  const { session } = useAuth();
   const { activeWorkspace } = useWorkspacesStore();
   const navigate = useNavigate();
 
@@ -86,7 +84,7 @@ export default function ProviderDetailsPage() {
   const save = useCallback(
     async (values: FormValues) => {
       try {
-        if (!providerId || !session || !activeWorkspace) {
+        if (!providerId || !activeWorkspace) {
           return;
         }
 
@@ -97,7 +95,6 @@ export default function ProviderDetailsPage() {
               ...values,
               key: maskKey(values.key),
               workspace_id: activeWorkspace.id,
-              user_id: session.user.id,
             })
             .select()
             .single();
@@ -153,7 +150,7 @@ export default function ProviderDetailsPage() {
         setSaving(false);
       }
     },
-    [activeWorkspace, getFieldState, navigate, providerId, reset, session]
+    [activeWorkspace, getFieldState, navigate, providerId, reset]
   );
 
   if (loading) {

@@ -134,6 +134,29 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompts: {
         Row: {
           created_at: string
@@ -148,7 +171,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
-          user_id: string
+          user_id?: string
           workspace_id: string
         }
         Update: {
@@ -196,7 +219,7 @@ export type Database = {
           options?: Json
           type: string
           updated_at?: string
-          user_id: string
+          user_id?: string
           workspace_id: string
         }
         Update: {
@@ -254,7 +277,7 @@ export type Database = {
           published_at?: string | null
           response_format?: Json
           temperature?: number
-          user_id: string
+          user_id?: string
         }
         Update: {
           created_at?: string

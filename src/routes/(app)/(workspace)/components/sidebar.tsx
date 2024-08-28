@@ -1,8 +1,9 @@
-import { Avatar, Button, Link } from "@nextui-org/react";
+import { Button, Link } from "@nextui-org/react";
 import { useLocation } from "react-router-dom";
 
 import WorkspaceSelector from "./workspace-selector";
 import useWorkspacesStore from "stores/workspaces";
+import UserMenu from "./user-menu";
 
 const LINKS = [
   {
@@ -44,8 +45,7 @@ export default function Sidebar() {
           })}
         </div>
       </div>
-
-      <Avatar />
+      <UserMenu />
     </div>
   );
 }

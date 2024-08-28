@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import useWorkspacesStore from "stores/workspaces";
 
 export default function WorkspaceSelector() {
-  const { session } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { isOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -51,7 +51,7 @@ export default function WorkspaceSelector() {
       </PopoverTrigger>
       <PopoverContent className="flex flex-col items-start p-0 min-w-80 overflow-hidden">
         <div className="border-b p-2 px-4 w-full">
-          <p className="text-xs text-default-500">{session?.user.email}</p>
+          <p className="text-xs text-default-500">{user?.email}</p>
         </div>
         <div className="w-full border-b">
           <Listbox className="w-full" aria-label="workspaces">

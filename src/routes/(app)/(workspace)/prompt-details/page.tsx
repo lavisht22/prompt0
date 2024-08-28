@@ -12,7 +12,6 @@ import { useParams } from "react-router-dom";
 import supabase from "utils/supabase";
 import { Database } from "supabase/functions/types";
 import toast from "react-hot-toast";
-import { useAuth } from "contexts/auth-context";
 import FullSpinner from "components/full-spinner";
 import useWorkspacesStore from "stores/workspaces";
 import Name from "./components/name";
@@ -67,7 +66,6 @@ const defaultValues: FormValues = {
 };
 
 export default function PromptDetailsPage() {
-  const { session } = useAuth();
   const { activeWorkspace } = useWorkspacesStore();
 
   const [loading, setLoading] = useState(true);
@@ -203,7 +201,7 @@ export default function PromptDetailsPage() {
   const save = useCallback(
     async (values: FormValues) => {
       try {
-        if (!promptId || !session || !activeWorkspace) {
+        if (!promptId || !activeWorkspace) {
           return;
         }
 
@@ -249,7 +247,6 @@ export default function PromptDetailsPage() {
                 .insert({
                   name: nameToBeUsed,
                   workspace_id: activeWorkspace.id,
-                  user_id: session?.user.id,
                 })
                 .select()
                 .single();
@@ -274,7 +271,6 @@ export default function PromptDetailsPage() {
             .from("versions")
             .insert({
               prompt_id: promptIdToBeUsed,
-              user_id: session?.user.id,
               number,
               ...values,
             })
@@ -308,7 +304,6 @@ export default function PromptDetailsPage() {
       name,
       promptId,
       reset,
-      session,
       variableValues,
       versions,
     ]
@@ -331,10 +326,7 @@ export default function PromptDetailsPage() {
 
   return (
     <div className="h-full">
-      <form
-        className="h-full flex flex-col"
-        onSubmit={handleSubmit(save)}
-      >
+      <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center">
             <h2 className="font-medium">Prompts</h2>

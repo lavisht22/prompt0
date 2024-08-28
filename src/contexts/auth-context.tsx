@@ -1,17 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { Session } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 import supabase from "../utils/supabase";
-import { useNavigate, useNavigation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SplashScreen from "../components/splash-screen";
 
 interface AuthContextT {
-  session: Session | null;
+  user: User | null;
 }
 
 const AuthContext = createContext<AuthContextT>({
-  session: null,
+  user: null,
 });
 
 export default function AuthProvider({
@@ -20,12 +20,12 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
-  const navigation = useNavigation();
+  const { pathname } = useLocation();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -33,21 +33,24 @@ export default function AuthProvider({
         setLoading(true);
 
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
+          data: { user },
+        } = await supabase.auth.getUser();
 
-        if (!session) {
-          navigate(
-            `/sign-in?returnTo=${encodeURIComponent(
-              navigation.location?.pathname || ""
-            )}`
-          );
-
+        if (!user) {
+          navigate(`/sign-in?returnTo=${encodeURIComponent(pathname)}`);
           return;
         }
 
-        setSession(session);
-      } catch {
+        supabase.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_OUT") {
+            setUser(null);
+            navigate(`/sign-in?returnTo=${encodeURIComponent(pathname)}`);
+          }
+        });
+
+        setUser(user);
+      } catch (error) {
+        console.error(error);
         setError("Could not load the page at the moment.");
       } finally {
         setLoading(false);
@@ -55,14 +58,14 @@ export default function AuthProvider({
     };
 
     init();
-  }, [navigate, navigation.location?.pathname]);
+  }, [navigate, pathname, setUser]);
 
   if (loading || error) {
     return <SplashScreen loading={loading} error={error} />;
   }
 
   return (
-    <AuthContext.Provider value={{ session }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
   );
 }
 
