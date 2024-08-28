@@ -1,17 +1,25 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import supabase from "utils/supabase";
 import useWorkspacesStore from "stores/workspaces";
-import useProvidersStore, { Provider } from "stores/providers";
 import toast from "react-hot-toast";
 import { Button, Input } from "@nextui-org/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
-import ProviderModal from "./components/provider-modal";
 import ProviderIcon from "components/provider-icon";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Database } from "supabase/functions/types";
+
+type Provider = Omit<
+  Database["public"]["Tables"]["providers"]["Row"],
+  "options"
+> & {
+  options: { [key: string]: string };
+};
 
 export default function ProvidersPage() {
+  const navigate = useNavigate();
   const { activeWorkspace } = useWorkspacesStore();
-  const { providers, setProviders, setActiveProvider } = useProvidersStore();
+
+  const [providers, setProviders] = useState<Provider[]>([]);
 
   const load = useCallback(async () => {
     try {
@@ -45,17 +53,8 @@ export default function ProvidersPage() {
   }, [load]);
 
   const add = useCallback(async () => {
-    setActiveProvider({
-      id: "new",
-      workspace_id: "",
-      type: "openai",
-      name: "",
-      options: {},
-      created_at: "",
-      user_id: "",
-      updated_at: "",
-    });
-  }, [setActiveProvider]);
+    navigate(`/${activeWorkspace?.slug}/providers/add`);
+  }, [activeWorkspace, navigate]);
 
   return (
     <div className="h-full">
@@ -101,7 +100,6 @@ export default function ProvidersPage() {
           </Link>
         ))}
       </div>
-      <ProviderModal />
     </div>
   );
 }

@@ -1,23 +1,37 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem } from "@nextui-org/react";
 import FullSpinner from "components/full-spinner";
+import ProviderIcon from "components/provider-icon";
 import { useAuth } from "contexts/auth-context";
 import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { LuSave } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router-dom";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import { z } from "zod";
+// import OpenAIForm from "./openai-form";
+
+// Functions to mask the key with leving first 4 and last 4 characters
+function maskKey(key: string) {
+  return key.slice(0, 4) + "*".repeat(key.length - 8) + key.slice(-4);
+}
 
 const FormSchema = z.object({
   name: z.string().min(1),
+  type: z.enum(["openai", "anthropic"]),
+  key: z.string().min(1),
+  options: z.record(z.any()),
 });
 
 export type FormValues = z.infer<typeof FormSchema>;
 
 const defaultValues: FormValues = {
   name: "",
+  type: "openai",
+  key: "",
+  options: {},
 };
 
 export default function ProviderDetailsPage() {
@@ -30,7 +44,7 @@ export default function ProviderDetailsPage() {
 
   const { providerId } = useParams<{ providerId: string }>();
 
-  const { handleSubmit, control, reset } = useForm<FormValues>({
+  const { handleSubmit, control, reset, getFieldState } = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues,
   });
@@ -79,9 +93,23 @@ export default function ProviderDetailsPage() {
         if (providerId === "add") {
           const { data: newProvider, error: newProviderError } = await supabase
             .from("providers")
-            .insert(values)
+            .insert({
+              ...values,
+              key: maskKey(values.key),
+              workspace_id: activeWorkspace.id,
+              user_id: session.user.id,
+            })
             .select()
             .single();
+
+          if (newProviderError) {
+            throw newProviderError;
+          }
+
+          await supabase.from("keys").insert({
+            provider_id: newProvider.id,
+            value: values.key,
+          });
 
           if (newProviderError) {
             throw newProviderError;
@@ -93,14 +121,29 @@ export default function ProviderDetailsPage() {
         } else {
           const { error: updateError } = await supabase
             .from("providers")
-            .update(values)
-            .eq("id", providerId);
+            .update({
+              ...values,
+              key: maskKey(values.key),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", providerId)
+            .throwOnError();
 
           if (updateError) {
             throw updateError;
           }
 
-          reset(values);
+          if (getFieldState("key").isDirty) {
+            await supabase
+              .from("keys")
+              .update({
+                value: values.key,
+              })
+              .eq("provider_id", providerId)
+              .throwOnError();
+          }
+
+          reset({ ...values, key: maskKey(values.key) });
         }
 
         setSaving(true);
@@ -110,7 +153,7 @@ export default function ProviderDetailsPage() {
         setSaving(false);
       }
     },
-    [activeWorkspace, navigate, providerId, reset, session]
+    [activeWorkspace, getFieldState, navigate, providerId, reset, session]
   );
 
   if (loading) {
@@ -123,21 +166,29 @@ export default function ProviderDetailsPage() {
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center">
             <h2 className="font-medium">Providers</h2>
-            <p className="font-medium ml-2">{">"}</p>
+            <p className="font-medium mx-2">{">"}</p>
+            <h2 className="font-medium">Update Provider</h2>
           </div>
           <div className="flex">
-            <Button type="submit" size="sm" color="primary" isDisabled={saving}>
+            <Button
+              type="submit"
+              size="sm"
+              color="primary"
+              isDisabled={saving}
+              startContent={<LuSave />}
+            >
               Save
             </Button>
           </div>
         </div>
         <div className="flex-1 flex overflow-y-hidden justify-center items-center">
-          <div className="max-w-xl w-full">
+          <div className="max-w-lg w-full space-y-4">
             <Controller
               name="name"
               control={control}
               render={({ field, fieldState }) => (
                 <Input
+                  isRequired
                   fullWidth
                   label="Name"
                   value={field.value}
@@ -146,6 +197,68 @@ export default function ProviderDetailsPage() {
                 />
               )}
             />
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  isRequired
+                  label="Type"
+                  disallowEmptySelection
+                  selectedKeys={new Set([field.value])}
+                  onSelectionChange={(keys) => {
+                    const arr = Array.from(keys) as string[];
+                    field.onChange(arr[0]);
+                  }}
+                >
+                  <SelectItem
+                    key="openai"
+                    value="openai"
+                    startContent={<ProviderIcon type="openai" />}
+                  >
+                    OpenAI
+                  </SelectItem>
+                  <SelectItem
+                    key="anthropic"
+                    value="anthropic"
+                    startContent={<ProviderIcon type="anthropic" />}
+                  >
+                    Anthropic
+                  </SelectItem>
+                </Select>
+              )}
+            />
+            <Controller
+              name="key"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  isRequired
+                  fullWidth
+                  label="API Key"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                />
+              )}
+            />
+            {/* <Controller
+              name="options"
+              control={control}
+              render={({ field }) => {
+                const type = watch().type;
+
+                if (type === "openai") {
+                  return (
+                    <OpenAIForm
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    />
+                  );
+                }
+
+                return <div />;
+              }}
+            /> */}
           </div>
         </div>
       </form>

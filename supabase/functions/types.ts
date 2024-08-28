@@ -180,6 +180,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          key: string
           name: string
           options: Json
           type: string
@@ -190,6 +191,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          key: string
           name: string
           options?: Json
           type: string
@@ -200,6 +202,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          key?: string
           name?: string
           options?: Json
           type?: string
