@@ -94,7 +94,10 @@ export default function PromptDetailsPage() {
 
   useEffect(() => {
     if (activeVersion !== null) {
-      reset(activeVersion as unknown as FormValues);
+      reset({
+        ...activeVersion,
+        ...(activeVersion.params as object),
+      } as unknown as FormValues);
     }
   }, [activeVersion, reset]);
 
@@ -271,8 +274,15 @@ export default function PromptDetailsPage() {
             .from("versions")
             .insert({
               prompt_id: promptIdToBeUsed,
+              provider_id: values.provider_id,
               number,
-              ...values,
+              params: {
+                messages: values.messages,
+                model: values.model,
+                max_tokens: values.max_tokens,
+                temperature: values.temperature,
+                response_format: values.response_format,
+              },
             })
             .select()
             .single();

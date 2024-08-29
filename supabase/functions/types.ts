@@ -251,46 +251,31 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          max_tokens: number
-          messages: Json
-          model: string
           number: number
           params: Json
           prompt_id: string
           provider_id: string | null
           published_at: string | null
-          response_format: Json
-          temperature: number
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          max_tokens?: number
-          messages?: Json
-          model: string
           number: number
           params?: Json
           prompt_id: string
           provider_id?: string | null
           published_at?: string | null
-          response_format?: Json
-          temperature?: number
           user_id?: string
         }
         Update: {
           created_at?: string
           id?: string
-          max_tokens?: number
-          messages?: Json
-          model?: string
           number?: number
           params?: Json
           prompt_id?: string
           provider_id?: string | null
           published_at?: string | null
-          response_format?: Json
-          temperature?: number
           user_id?: string
         }
         Relationships: [
