@@ -84,7 +84,17 @@ Deno.serve(async (req) => {
 
     console.log("Read time", after - before);
 
-    return generate(version as Version, stream, variables);
+    return generate(
+      {
+        ...version,
+        prompts: {
+          id: prompt.id,
+          workspace_id: prompt.workspace_id,
+        },
+      } as Version,
+      stream,
+      variables,
+    );
   } catch (error) {
     console.error(error);
     return ErrorResponse(error.message, 500);

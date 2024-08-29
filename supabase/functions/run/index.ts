@@ -24,22 +24,11 @@ Deno.serve(async (req) => {
 
     const before = Date.now();
 
-    // const { data: prompt, error: promptReadError } = await serviceClient.from(
-    //   "prompts",
-    // ).select(
-    //   "id, workspace_id",
-    // ).eq(
-    //   "id",
-    //   prompt_id,
-    // ).single();
-
-    // if (promptReadError) {
-    //   throw promptReadError;
-    // }
-
     const { data: version, error: versionReadError } = await serviceClient.from(
       "versions",
-    ).select("*, providers(id, type, options, keys(value))").eq(
+    ).select(
+      "*, providers(id, type, options, keys(value)), prompts(id, workspace_id)",
+    ).eq(
       "id",
       version_id,
     ).eq("prompt_id", prompt_id).single();

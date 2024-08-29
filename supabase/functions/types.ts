@@ -85,8 +85,6 @@ export type Database = {
           cost: number
           created_at: string
           id: string
-          input_tokens: number
-          output_tokens: number
           request: Json
           response: Json
           version_id: string | null
@@ -96,8 +94,6 @@ export type Database = {
           cost: number
           created_at?: string
           id?: string
-          input_tokens: number
-          output_tokens: number
           request?: Json
           response?: Json
           version_id?: string | null
@@ -107,8 +103,6 @@ export type Database = {
           cost?: number
           created_at?: string
           id?: string
-          input_tokens?: number
-          output_tokens?: number
           request?: Json
           response?: Json
           version_id?: string | null

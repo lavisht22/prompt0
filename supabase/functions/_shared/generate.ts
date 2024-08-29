@@ -4,6 +4,7 @@ import { OpenAI } from "https://esm.sh/openai@4.56.0";
 import { ChatResponse } from "./types.ts";
 import { StreamResponse, SuccessResponse } from "./response.ts";
 import { Json } from "../types.ts";
+import { serviceClient } from "./supabase.ts";
 
 type VariableValues = Record<string, string>;
 
@@ -75,6 +76,11 @@ export function applyVariables(
 }
 
 export type Version = {
+    id: string;
+    prompts: {
+        id: string;
+        workspace_id: string;
+    };
     providers: {
         type: string;
         keys: {
@@ -102,7 +108,7 @@ export async function generate(
     });
 
     const params = version.params as unknown as {
-        messages: OpenAI.Chat.ChatCompletionAssistantMessageParam[];
+        messages: OpenAI.Chat.ChatCompletionMessageParam[];
         model: string;
         max_tokens: number;
         temperature: number;
@@ -111,6 +117,8 @@ export async function generate(
             | OpenAI.ResponseFormatJSONObject
             | OpenAI.ResponseFormatJSONSchema;
     };
+
+    params.messages = applyVariables(params.messages, variables || {});
 
     if (stream) {
         const encoder = new TextEncoder();
@@ -136,11 +144,8 @@ export async function generate(
 
                 const response = await client.chat.completions.create({
                     ...params,
-                    messages: applyVariables(
-                        params.messages,
-                        variables || {},
-                    ),
                     stream: true,
+                    stream_options: { include_usage: true },
                 });
 
                 for await (const chunk of response) {
@@ -176,6 +181,14 @@ export async function generate(
                         ?.completion_tokens;
                 }
 
+                await serviceClient.from("logs").insert({
+                    workspace_id: version.prompts.workspace_id,
+                    version_id: version.id,
+                    cost: 0,
+                    request: params,
+                    response: constructedResponse,
+                });
+
                 controller.close();
             },
         });
@@ -184,22 +197,26 @@ export async function generate(
     } else {
         const response = await client.chat.completions.create({
             ...params,
-            messages: applyVariables(
-                params.messages,
-                variables || {},
-            ),
             stream: false,
+        }).then((response) => {
+            return {
+                id,
+                model: response.model,
+                message: response.choices[0].message,
+                finish_reason: response.choices[0].finish_reason,
+                prompt_tokens: response.usage?.prompt_tokens,
+                completion_tokens: response.usage?.completion_tokens,
+            } as ChatResponse;
         });
 
-        // TODO: Track this request
+        await serviceClient.from("logs").insert({
+            workspace_id: version.prompts.workspace_id,
+            version_id: version.id,
+            cost: 0,
+            request: params,
+            response: response,
+        });
 
-        return SuccessResponse({
-            id,
-            model: response.model,
-            message: response.choices[0].message,
-            finish_reason: response.choices[0].finish_reason,
-            prompt_tokens: response.usage?.prompt_tokens,
-            completion_tokens: response.usage?.completion_tokens,
-        } as ChatResponse);
+        return SuccessResponse(response);
     }
 }
