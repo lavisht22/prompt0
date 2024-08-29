@@ -1,7 +1,7 @@
 import { v4 as uuid } from "https://esm.sh/uuid@10.0.0";
 import { OpenAI } from "https://esm.sh/openai@4.56.0";
 
-import { PromptResponse } from "./types.ts";
+import { ChatResponse } from "./types.ts";
 import { StreamResponse, SuccessResponse } from "./response.ts";
 import { Json } from "../types.ts";
 
@@ -18,13 +18,10 @@ function replaceVariablesInText(
 }
 
 export function applyVariables(
-    messages: Json,
+    messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
     variables: VariableValues,
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] {
-    const castedMessages =
-        messages as unknown as OpenAI.Chat.Completions.ChatCompletionMessageParam[];
-
-    return castedMessages.map((message) => {
+    return messages.map((message) => {
         if (message.role === "system" || message.role === "assistant") {
             // Replace variables in system/assistant messages
             return {
@@ -84,11 +81,7 @@ export type Version = {
             value: string;
         };
     };
-    messages: Json;
-    model: string;
-    max_tokens: number;
-    temperature: number;
-    response_format: Json;
+    params: Json;
 };
 
 export async function generate(
@@ -108,10 +101,21 @@ export async function generate(
         },
     });
 
+    const params = version.params as unknown as {
+        messages: OpenAI.Chat.ChatCompletionAssistantMessageParam[];
+        model: string;
+        max_tokens: number;
+        temperature: number;
+        response_format:
+            | OpenAI.ResponseFormatText
+            | OpenAI.ResponseFormatJSONObject
+            | OpenAI.ResponseFormatJSONSchema;
+    };
+
     if (stream) {
         const encoder = new TextEncoder();
 
-        const constructedResponse: PromptResponse = {
+        const constructedResponse: ChatResponse = {
             id,
             model: "",
             message: {
@@ -131,20 +135,12 @@ export async function generate(
                 }
 
                 const response = await client.chat.completions.create({
+                    ...params,
                     messages: applyVariables(
-                        version.messages,
+                        params.messages,
                         variables || {},
                     ),
-                    model: version.model,
-                    max_tokens: version.max_tokens,
-                    temperature: version.temperature,
                     stream: true,
-                    response_format: version
-                        .response_format as unknown as (
-                            | OpenAI.ResponseFormatText
-                            | OpenAI.ResponseFormatJSONObject
-                            | OpenAI.ResponseFormatJSONSchema
-                        ),
                 });
 
                 for await (const chunk of response) {
@@ -187,20 +183,15 @@ export async function generate(
         return StreamResponse(readableStream);
     } else {
         const response = await client.chat.completions.create({
-            messages: version.messages as unknown as Array<
-                OpenAI.Chat.Completions.ChatCompletionMessageParam
-            >,
-            model: version.model,
-            max_tokens: version.max_tokens,
-            temperature: version.temperature,
+            ...params,
+            messages: applyVariables(
+                params.messages,
+                variables || {},
+            ),
             stream: false,
-            response_format: version
-                .response_format as unknown as (
-                    | OpenAI.ResponseFormatText
-                    | OpenAI.ResponseFormatJSONObject
-                    | OpenAI.ResponseFormatJSONSchema
-                ),
         });
+
+        // TODO: Track this request
 
         return SuccessResponse({
             id,
@@ -209,6 +200,6 @@ export async function generate(
             finish_reason: response.choices[0].finish_reason,
             prompt_tokens: response.usage?.prompt_tokens,
             completion_tokens: response.usage?.completion_tokens,
-        } as PromptResponse);
+        } as ChatResponse);
     }
 }

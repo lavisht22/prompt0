@@ -1,11 +1,11 @@
-import { Provider } from "stores/providers";
-
 export default function OpenAIForm({
   value,
   onValueChange,
 }: {
-  value: Provider["options"];
-  onValueChange: (options: Provider["options"]) => void;
+  value: any;
+  onValueChange: any;
 }) {
+  console.log(value, onValueChange);
+
   return <></>;
 }

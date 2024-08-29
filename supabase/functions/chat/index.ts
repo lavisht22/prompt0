@@ -18,9 +18,12 @@ Deno.serve(async (req) => {
 
     const before = Date.now();
 
-    const { prompt_id, stream }: {
+    const { prompt_id, stream, variables }: {
       prompt_id: string;
       stream?: boolean;
+      variables?: {
+        [key: string]: string;
+      };
     } = await req
       .json();
 
@@ -81,7 +84,7 @@ Deno.serve(async (req) => {
 
     console.log("Read time", after - before);
 
-    return generate(version as Version, stream);
+    return generate(version as Version, stream, variables);
   } catch (error) {
     console.error(error);
     return ErrorResponse(error.message, 500);

@@ -1,6 +1,6 @@
 import { OpenAI } from "https://esm.sh/openai@4.56.0";
 
-export type PromptResponse = {
+export type ChatResponse = {
     id: string;
     model: string;
     message: OpenAI.Chat.ChatCompletionMessage;

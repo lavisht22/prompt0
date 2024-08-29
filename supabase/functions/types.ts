@@ -87,7 +87,6 @@ export type Database = {
           id: string
           input_tokens: number
           output_tokens: number
-          provider: Json
           request: Json
           response: Json
           version_id: string | null
@@ -99,7 +98,6 @@ export type Database = {
           id?: string
           input_tokens: number
           output_tokens: number
-          provider: Json
           request?: Json
           response?: Json
           version_id?: string | null
@@ -111,7 +109,6 @@ export type Database = {
           id?: string
           input_tokens?: number
           output_tokens?: number
-          provider?: Json
           request?: Json
           response?: Json
           version_id?: string | null
@@ -258,6 +255,7 @@ export type Database = {
           messages: Json
           model: string
           number: number
+          params: Json
           prompt_id: string
           provider_id: string | null
           published_at: string | null
@@ -272,6 +270,7 @@ export type Database = {
           messages?: Json
           model: string
           number: number
+          params?: Json
           prompt_id: string
           provider_id?: string | null
           published_at?: string | null
@@ -286,6 +285,7 @@ export type Database = {
           messages?: Json
           model?: string
           number?: number
+          params?: Json
           prompt_id?: string
           provider_id?: string | null
           published_at?: string | null
