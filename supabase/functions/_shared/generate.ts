@@ -90,6 +90,21 @@ export type Version = {
     params: Json;
 };
 
+async function insertLog(
+    workspace_id: string,
+    version_id: string,
+    request: unknown,
+    response: unknown,
+) {
+    await serviceClient.from("logs").insert({
+        workspace_id,
+        version_id,
+        cost: 0,
+        request,
+        response,
+    });
+}
+
 export async function generate(
     version: Version,
     stream?: boolean,
@@ -181,13 +196,12 @@ export async function generate(
                         ?.completion_tokens;
                 }
 
-                await serviceClient.from("logs").insert({
-                    workspace_id: version.prompts.workspace_id,
-                    version_id: version.id,
-                    cost: 0,
-                    request: params,
-                    response: constructedResponse,
-                });
+                await insertLog(
+                    version.prompts.workspace_id,
+                    version.id,
+                    params,
+                    constructedResponse,
+                );
 
                 controller.close();
             },
@@ -209,13 +223,12 @@ export async function generate(
             } as ChatResponse;
         });
 
-        await serviceClient.from("logs").insert({
-            workspace_id: version.prompts.workspace_id,
-            version_id: version.id,
-            cost: 0,
-            request: params,
-            response: response,
-        });
+        await insertLog(
+            version.prompts.workspace_id,
+            version.id,
+            params,
+            response,
+        );
 
         return SuccessResponse(response);
     }
