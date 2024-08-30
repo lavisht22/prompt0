@@ -86,6 +86,7 @@ export type Version = {
         keys: {
             value: string;
         };
+        options: Record<string, string>;
     };
     params: Json;
 };
@@ -117,11 +118,30 @@ export async function generate(
     console.log("GENERATING", version, stream, variables);
     const id = uuid();
 
+    // Convert options into headers
+    const headers: Record<string, string> = {};
+
+    if (version.providers.type === "azure-openai") {
+        // Extract resource name from endpoint (e.g. extract "tribe" form "https://tribe.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2023-03-15-preview")
+        const url = new URL(version.providers.options.endpoint);
+        const resourceName = url.host.split(".")[0];
+
+        console.log("resourceName", resourceName, version.providers.options);
+
+        headers["x-portkey-azure-resource-name"] = resourceName;
+        headers["x-portkey-azure-deployment-id"] =
+            version.providers.options.deployment;
+        headers["x-portkey-azure-api-version"] =
+            version.providers.options.apiVersion;
+        headers["x-portkey-azure-model-name"] = "gpt-4o";
+    }
+
     const client = new OpenAI({
         baseURL: "https://rubeus.lavisht22.workers.dev/v1",
         apiKey: version.providers.keys.value,
         defaultHeaders: {
             "x-portkey-provider": version.providers.type,
+            ...headers,
         },
     });
 
@@ -200,6 +220,7 @@ export async function generate(
                 }
 
                 await insertLog(
+                    id,
                     version.prompts.workspace_id,
                     version.id,
                     params,

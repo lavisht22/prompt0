@@ -6,6 +6,8 @@ import { FormValues } from "./page";
 
 export const AzureOpenAIFormSchema = z.object({
   endpoint: z.string().min(1),
+  deployment: z.string().min(1),
+  apiVersion: z.string().min(1),
 });
 
 export default function AzureOpenAIForm({
@@ -25,6 +27,32 @@ export default function AzureOpenAIForm({
           <Input
             isRequired
             label="Endpoint"
+            value={field.value}
+            onValueChange={field.onChange}
+            isInvalid={fieldState.invalid}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="options.deployment"
+        render={({ field, fieldState }) => (
+          <Input
+            isRequired
+            label="Deployment"
+            value={field.value}
+            onValueChange={field.onChange}
+            isInvalid={fieldState.invalid}
+          />
+        )}
+      />
+      <Controller
+        control={control}
+        name="options.apiVersion"
+        render={({ field, fieldState }) => (
+          <Input
+            isRequired
+            label="API Version"
             value={field.value}
             onValueChange={field.onChange}
             isInvalid={fieldState.invalid}
