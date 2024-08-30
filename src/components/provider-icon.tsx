@@ -1,4 +1,9 @@
-import { SiAnthropic, SiOpenai, SiConventionalcommits } from "react-icons/si";
+import {
+  SiAnthropic,
+  SiOpenai,
+  SiConventionalcommits,
+  SiMicrosoftazure,
+} from "react-icons/si";
 
 export default function ProviderIcon({
   type,
@@ -13,6 +18,10 @@ export default function ProviderIcon({
 
   if (type === "anthropic") {
     return <SiAnthropic className={className} />;
+  }
+
+  if (type === "azure-openai") {
+    return <SiMicrosoftazure className={className} />;
   }
 
   return <SiConventionalcommits className={className} />;

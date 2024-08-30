@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import { z } from "zod";
+import AzureOpenAIForm, { AzureOpenAIFormSchema } from "./azure-openai-form";
 // import OpenAIForm from "./openai-form";
 
 // Functions to mask the key with leving first 4 and last 4 characters
@@ -17,12 +18,34 @@ function maskKey(key: string) {
   return key.slice(0, 4) + "*".repeat(key.length - 8) + key.slice(-4);
 }
 
-const FormSchema = z.object({
-  name: z.string().min(1),
-  type: z.enum(["openai", "anthropic"]),
-  key: z.string().min(1),
-  options: z.record(z.any()),
-});
+const FormSchema = z
+  .object({
+    name: z.string().min(1),
+    type: z.enum(["openai", "anthropic", "azure-openai"]),
+    key: z.string().min(1),
+    options: z.record(z.any()),
+  })
+  .superRefine((data, ctx) => {
+    const OptionsSchemas = {
+      "azure-openai": AzureOpenAIFormSchema,
+    };
+
+    const OptionsSchema =
+      OptionsSchemas[data.type as keyof typeof OptionsSchemas];
+
+    if (OptionsSchema) {
+      const result = OptionsSchema.safeParse(data.options);
+
+      if (!result.success) {
+        result.error.issues.forEach((issue) =>
+          ctx.addIssue({
+            ...issue,
+            path: ["options", ...issue.path],
+          })
+        );
+      }
+    }
+  });
 
 export type FormValues = z.infer<typeof FormSchema>;
 
@@ -42,10 +65,11 @@ export default function ProviderDetailsPage() {
 
   const { providerId } = useParams<{ providerId: string }>();
 
-  const { handleSubmit, control, reset, getFieldState } = useForm<FormValues>({
-    resolver: zodResolver(FormSchema),
-    defaultValues,
-  });
+  const { handleSubmit, control, reset, getFieldState, watch } =
+    useForm<FormValues>({
+      resolver: zodResolver(FormSchema),
+      defaultValues,
+    });
 
   useEffect(() => {
     const init = async () => {
@@ -83,6 +107,7 @@ export default function ProviderDetailsPage() {
 
   const save = useCallback(
     async (values: FormValues) => {
+      console.log(values);
       try {
         if (!providerId || !activeWorkspace) {
           return;
@@ -179,7 +204,7 @@ export default function ProviderDetailsPage() {
           </div>
         </div>
         <div className="flex-1 flex overflow-y-hidden justify-center items-center">
-          <div className="max-w-lg w-full space-y-4">
+          <div className="flex flex-col max-w-lg w-full gap-y-4">
             <Controller
               name="name"
               control={control}
@@ -209,18 +234,25 @@ export default function ProviderDetailsPage() {
                   }}
                 >
                   <SelectItem
-                    key="openai"
-                    value="openai"
-                    startContent={<ProviderIcon type="openai" />}
-                  >
-                    OpenAI
-                  </SelectItem>
-                  <SelectItem
                     key="anthropic"
                     value="anthropic"
                     startContent={<ProviderIcon type="anthropic" />}
                   >
                     Anthropic
+                  </SelectItem>
+                  <SelectItem
+                    key="azure-openai"
+                    value="azure-openai"
+                    startContent={<ProviderIcon type="azure-openai" />}
+                  >
+                    Azure OpenAI
+                  </SelectItem>
+                  <SelectItem
+                    key="openai"
+                    value="openai"
+                    startContent={<ProviderIcon type="openai" />}
+                  >
+                    OpenAI
                   </SelectItem>
                 </Select>
               )}
@@ -228,34 +260,21 @@ export default function ProviderDetailsPage() {
             <Controller
               name="key"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <Input
                   isRequired
                   fullWidth
                   label="API Key"
                   value={field.value}
                   onValueChange={field.onChange}
+                  isInvalid={fieldState.invalid}
                 />
               )}
             />
-            {/* <Controller
-              name="options"
-              control={control}
-              render={({ field }) => {
-                const type = watch().type;
 
-                if (type === "openai") {
-                  return (
-                    <OpenAIForm
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    />
-                  );
-                }
-
-                return <div />;
-              }}
-            /> */}
+            {watch().type === "azure-openai" && (
+              <AzureOpenAIForm control={control} />
+            )}
           </div>
         </div>
       </form>
