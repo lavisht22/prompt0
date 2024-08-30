@@ -91,12 +91,14 @@ export type Version = {
 };
 
 async function insertLog(
+    id: string,
     workspace_id: string,
     version_id: string,
     request: unknown,
     response: unknown,
 ) {
     await serviceClient.from("logs").insert({
+        id,
         workspace_id,
         version_id,
         cost: 0,
@@ -112,6 +114,7 @@ export async function generate(
         [key: string]: string;
     },
 ) {
+    console.log("GENERATING", version, stream, variables);
     const id = uuid();
 
     const client = new OpenAI({
@@ -151,17 +154,17 @@ export async function generate(
             completion_tokens: undefined,
         };
 
+        const response = await client.chat.completions.create({
+            ...params,
+            stream: true,
+            // stream_options: { include_usage: true },  TODO: Figure out an alternative to this
+        });
+
         const readableStream = new ReadableStream({
             async start(controller) {
                 if (!version.providers) {
                     return;
                 }
-
-                const response = await client.chat.completions.create({
-                    ...params,
-                    stream: true,
-                    stream_options: { include_usage: true },
-                });
 
                 for await (const chunk of response) {
                     controller.enqueue(
@@ -224,6 +227,7 @@ export async function generate(
         });
 
         await insertLog(
+            id,
             version.prompts.workspace_id,
             version.id,
             params,

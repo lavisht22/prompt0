@@ -164,6 +164,7 @@ export default function PromptDetailsPage() {
       versionId: string,
       variables: Map<string, string>
     ) => {
+      console.log("GENERATING", promptId, versionId, variables);
       setResponse("");
 
       const response = await stream(
@@ -197,6 +198,8 @@ export default function PromptDetailsPage() {
 
         setResponse((prev) => (prev += data.delta.content || ""));
       }
+
+      console.log("GENERATED", promptId, versionId, variables);
     },
     []
   );
