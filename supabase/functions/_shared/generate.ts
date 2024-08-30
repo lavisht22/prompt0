@@ -1,5 +1,5 @@
 import { v4 as uuid } from "https://esm.sh/uuid@10.0.0";
-import { OpenAI } from "https://esm.sh/openai@4.56.0";
+import { OpenAI } from "https://esm.sh/openai@4.57.0";
 
 import { ChatResponse } from "./types.ts";
 import { StreamResponse, SuccessResponse } from "./response.ts";
@@ -115,7 +115,6 @@ export async function generate(
         [key: string]: string;
     },
 ) {
-    console.log("GENERATING", version, stream, variables);
     const id = uuid();
 
     // Convert options into headers
@@ -126,14 +125,11 @@ export async function generate(
         const url = new URL(version.providers.options.endpoint);
         const resourceName = url.host.split(".")[0];
 
-        console.log("resourceName", resourceName, version.providers.options);
-
         headers["x-portkey-azure-resource-name"] = resourceName;
         headers["x-portkey-azure-deployment-id"] =
             version.providers.options.deployment;
         headers["x-portkey-azure-api-version"] =
             version.providers.options.apiVersion;
-        headers["x-portkey-azure-model-name"] = "gpt-4o";
     }
 
     const client = new OpenAI({
@@ -187,36 +183,39 @@ export async function generate(
                 }
 
                 for await (const chunk of response) {
-                    controller.enqueue(
-                        encoder.encode(`data: ${
-                            JSON.stringify({
-                                id,
-                                model: chunk.model,
-                                delta: chunk.choices[0].delta,
-                                finish_reason: chunk.choices[0].finish_reason,
-                                prompt_tokens: chunk.usage?.prompt_tokens,
-                                completion_tokens: chunk.usage
-                                    ?.completion_tokens,
-                            })
-                        }\n\n`),
-                    );
+                    if (chunk.choices.length > 0) {
+                        controller.enqueue(
+                            encoder.encode(`data: ${
+                                JSON.stringify({
+                                    id,
+                                    model: chunk.model,
+                                    delta: chunk.choices[0].delta,
+                                    finish_reason:
+                                        chunk.choices[0].finish_reason,
+                                    prompt_tokens: chunk.usage?.prompt_tokens,
+                                    completion_tokens: chunk.usage
+                                        ?.completion_tokens,
+                                })
+                            }\n\n`),
+                        );
 
-                    constructedResponse.model = chunk.model;
+                        constructedResponse.model = chunk.model;
 
-                    constructedResponse.message.content = `${
-                        constructedResponse.message.content || ""
-                    }${chunk.choices[0].delta.content || ""}`;
+                        constructedResponse.message.content = `${
+                            constructedResponse.message.content || ""
+                        }${chunk.choices[0].delta.content || ""}`;
 
-                    constructedResponse.message.refusal =
-                        chunk.choices[0].delta.refusal || null;
+                        constructedResponse.message.refusal =
+                            chunk.choices[0].delta.refusal || null;
 
-                    constructedResponse.finish_reason = chunk.choices[0]
-                        .finish_reason as string;
+                        constructedResponse.finish_reason = chunk.choices[0]
+                            .finish_reason as string;
 
-                    constructedResponse.prompt_tokens = chunk.usage
-                        ?.prompt_tokens;
-                    constructedResponse.completion_tokens = chunk.usage
-                        ?.completion_tokens;
+                        constructedResponse.prompt_tokens = chunk.usage
+                            ?.prompt_tokens;
+                        constructedResponse.completion_tokens = chunk.usage
+                            ?.completion_tokens;
+                    }
                 }
 
                 await insertLog(
