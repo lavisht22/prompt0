@@ -8,7 +8,7 @@ import SystemMessage, {
 } from "./components/system-message";
 import UserMessage, { UserMessageSchema } from "./components/user-message";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 
@@ -76,6 +76,8 @@ export default function Prompt({
   setActiveVersionId: (activeVersionId: string | null) => void;
   setDirty: (dirty: boolean) => void;
 }) {
+  const { promptId } = useParams<{ promptId: string }>();
+  const navigate = useNavigate();
   const { activeWorkspace } = useWorkspacesStore();
 
   const [saving, setSaving] = useState(false);
@@ -86,8 +88,6 @@ export default function Prompt({
   const [variableValues, setVariableValues] = useState<Map<string, string>>(
     new Map()
   );
-
-  const { promptId } = useParams<{ promptId: string }>();
 
   const { handleSubmit, control, reset, formState, getValues } =
     useForm<FormValues>({
@@ -221,13 +221,6 @@ export default function Prompt({
               throw createPromptError;
             }
 
-            // Update the prompt id without navigating
-            window.history.replaceState(
-              null,
-              "New Page Title",
-              `/${activeWorkspace.slug}/prompts/${createdPrompt.id}`
-            );
-
             promptIdToBeUsed = createdPrompt.id;
           }
 
@@ -258,6 +251,14 @@ export default function Prompt({
           setActiveVersionId(data.id);
           versionIdToBeUsed = data.id;
           reset(values);
+
+          if (promptId === "create") {
+            navigate(
+              `/${activeWorkspace.slug}/prompts/${promptIdToBeUsed}?generate=true`
+            );
+          }
+
+          return;
         }
 
         // Call the generate function
@@ -275,6 +276,7 @@ export default function Prompt({
       formState.isDirty,
       generate,
       name,
+      navigate,
       promptId,
       reset,
       setActiveVersionId,
