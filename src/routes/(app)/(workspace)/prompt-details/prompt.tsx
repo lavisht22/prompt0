@@ -102,7 +102,11 @@ export default function Prompt({
   const { handleSubmit, control, reset, formState, getValues } =
     useForm<FormValues>({
       resolver: zodResolver(FormSchema),
-      defaultValues,
+      defaultValues: {
+        ...defaultValues,
+        provider_id: activeVersion?.provider_id || "",
+        ...(activeVersion?.params as object),
+      } as FormValues,
     });
 
   useEffect(() => {
@@ -111,10 +115,13 @@ export default function Prompt({
 
   useEffect(() => {
     if (activeVersion !== null) {
+      const params = activeVersion.params as object;
+
       reset({
-        ...activeVersion,
-        ...(activeVersion.params as object),
-      } as unknown as FormValues);
+        provider_id: activeVersion.provider_id,
+
+        ...params,
+      } as FormValues);
     }
   }, [activeVersion, reset]);
 
@@ -125,15 +132,6 @@ export default function Prompt({
       setVariableValues(new Map(Object.entries(lastEvaluation.variables)));
     }
   }, [evaluations]);
-
-  const {
-    fields: messages,
-    append: addMessage,
-    remove: removeMessage,
-  } = useFieldArray({
-    name: "messages",
-    control,
-  });
 
   const generate = useCallback(
     async (version: Version, variables: Map<string, string>) => {
@@ -338,6 +336,15 @@ export default function Prompt({
 
   useHotkeys("mod+enter", () => handleSubmit(save)(), [save]);
 
+  const {
+    fields: messages,
+    append: addMessage,
+    remove: removeMessage,
+  } = useFieldArray({
+    name: "messages",
+    control,
+  });
+
   if (!promptId) {
     // TODO: Redirect to the prompts page
     return null;
@@ -352,7 +359,7 @@ export default function Prompt({
               if (field.role === "system") {
                 return (
                   <Controller
-                    key={field.id}
+                    key={index}
                     name={`messages.${index}`}
                     control={control}
                     render={({ field, fieldState }) => (
@@ -373,7 +380,7 @@ export default function Prompt({
               if (field.role === "user") {
                 return (
                   <Controller
-                    key={field.id}
+                    key={index}
                     name={`messages.${index}`}
                     control={control}
                     render={({ field, fieldState }) => (
@@ -393,7 +400,7 @@ export default function Prompt({
               if (field.role === "assistant") {
                 return (
                   <Controller
-                    key={field.id}
+                    key={index}
                     name={`messages.${index}`}
                     control={control}
                     render={({ field, fieldState }) => (

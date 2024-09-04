@@ -54,7 +54,7 @@ export default function UserMessage({
       {value.content.map((part, index) => {
         if (part.type === "text") {
           return (
-            <div>
+            <div key={index}>
               <ReactTextareaAutosize
                 className="outline-none w-full text-sm resize-none mb-4 bg-transparent"
                 placeholder="Enter user message..."
@@ -80,7 +80,7 @@ export default function UserMessage({
         }
 
         if (part.type === "image_url") {
-          return <div>Coming soon...</div>;
+          return <div key={index}>Coming soon...</div>;
         }
       })}
 
