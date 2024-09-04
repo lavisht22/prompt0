@@ -345,11 +345,8 @@ export default function Prompt({
 
   return (
     <>
-      <form
-        className="relative h-full overflow-hidden"
-        onSubmit={handleSubmit(save)}
-      >
-        <div className="flex overflow-hidden h-full">
+      <form className="flex-1 overflow-hidden" onSubmit={handleSubmit(save)}>
+        <div className="flex h-full overflow-hidden">
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
             {messages.map((field, index) => {
               if (field.role === "system") {
@@ -463,42 +460,6 @@ export default function Prompt({
             <Params control={control} />
           </div>
         </div>
-        <div className="flex items-center absolute right-3 -top-12 h-12">
-          <History
-            versions={versions}
-            setActiveVersionId={setActiveVersionId}
-          />
-          <Button
-            size="sm"
-            variant="light"
-            isIconOnly
-            onPress={() => setVariablesOpen(true)}
-          >
-            <LuBraces className="w-4 h-4" />
-          </Button>
-          <Button
-            className="mx-2"
-            isDisabled={saving}
-            type="submit"
-            size="sm"
-            color="primary"
-            startContent={<LuPlay />}
-            endContent={
-              <Kbd
-                className="text-xs bg-opacity-20 shadow-none text-default"
-                keys={["command", "enter"]}
-              />
-            }
-          >
-            Run
-          </Button>
-          <Deploy
-            isDirty={formState.isDirty}
-            activeVersionId={activeVersionId}
-            versions={versions}
-            setVersions={setVersions}
-          />
-        </div>
       </form>
       <VariablesDialog
         isOpen={variablesOpen}
@@ -508,6 +469,39 @@ export default function Prompt({
         setValues={setVariableValues}
         onRun={() => handleSubmit(save)()}
       />
+      <div className="flex items-center absolute right-3 top-0 h-12">
+        <History versions={versions} setActiveVersionId={setActiveVersionId} />
+        <Button
+          size="sm"
+          variant="light"
+          isIconOnly
+          onPress={() => setVariablesOpen(true)}
+        >
+          <LuBraces className="w-4 h-4" />
+        </Button>
+        <Button
+          className="mx-2"
+          isDisabled={saving}
+          onPress={() => handleSubmit(save)()}
+          size="sm"
+          color="primary"
+          startContent={<LuPlay />}
+          endContent={
+            <Kbd
+              className="text-xs bg-opacity-20 shadow-none text-default"
+              keys={["command", "enter"]}
+            />
+          }
+        >
+          Run
+        </Button>
+        <Deploy
+          isDirty={formState.isDirty}
+          activeVersionId={activeVersionId}
+          versions={versions}
+          setVersions={setVersions}
+        />
+      </div>
     </>
   );
 }

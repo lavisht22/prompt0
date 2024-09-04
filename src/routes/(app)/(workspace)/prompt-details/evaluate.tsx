@@ -1,7 +1,3 @@
 export default function Evaluate() {
-  return (
-    <div className="h-full flex flex-col relative p-6">
-      Evaluate Coming Soon
-    </div>
-  );
+  return <div className="flex-1 overflow-hidden p-6">Evaluate Coming Soon</div>;
 }
