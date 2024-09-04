@@ -346,10 +346,10 @@ export default function Prompt({
   return (
     <>
       <form
-        className="h-full flex flex-col relative"
+        className="relative h-full overflow-hidden"
         onSubmit={handleSubmit(save)}
       >
-        <div className="flex-1 flex overflow-y-hidden ">
+        <div className="flex overflow-hidden h-full">
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
             {messages.map((field, index) => {
               if (field.role === "system") {

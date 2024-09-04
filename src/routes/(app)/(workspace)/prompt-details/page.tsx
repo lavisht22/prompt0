@@ -86,7 +86,7 @@ export default function PromptDetailsPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex justify-between items-center bg-background px-3 h-12 border-b relative">
+      <div className="flex justify-between items-center bg-background px-3 h-12 border-b relative flex-shrink-0">
         <div className="flex items-center">
           <Name value={name} onValueChange={setName} promptId={promptId} />
 
