@@ -339,8 +339,6 @@ export default function PromptDetailsPage() {
       <form className="h-full flex flex-col" onSubmit={handleSubmit(save)}>
         <div className="flex justify-between items-center bg-background px-3 h-12 border-b">
           <div className="flex items-center">
-            <h2 className="font-medium">Prompts</h2>
-            <p className="font-medium ml-2">{">"}</p>
             <Name value={name} onValueChange={setName} promptId={promptId} />
 
             {activeVersion && (
