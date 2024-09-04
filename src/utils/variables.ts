@@ -1,4 +1,4 @@
-import { FormValues } from "routes/(app)/(workspace)/prompt-details/page";
+import { FormValues } from "routes/(app)/(workspace)/prompt-details/prompt";
 
 // Function to extract {{VARIABLES}} from a string
 export function extractVariables(string: string): string[] {

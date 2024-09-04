@@ -8,7 +8,7 @@ import {
   Textarea,
 } from "@nextui-org/react";
 import { LuPlay } from "react-icons/lu";
-import { FormValues } from "../page";
+import { FormValues } from "../prompt";
 import { useEffect, useState } from "react";
 import { extractVaraiblesFromMessages } from "utils/variables";
 

@@ -2,7 +2,7 @@ import { Input, Select, SelectItem, Slider } from "@nextui-org/react";
 import { useEffect, useState } from "react";
 import { Control, Controller } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
-import { FormValues } from "../page";
+import { FormValues } from "../prompt";
 import supabase from "utils/supabase";
 
 type Provider = {
