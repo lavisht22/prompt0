@@ -5,7 +5,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@nextui-org/react";
-import { Version } from "../prompt";
+import { Version } from "../page";
 import { useCallback, useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import supabase from "utils/supabase";
