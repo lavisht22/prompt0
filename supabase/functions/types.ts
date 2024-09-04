@@ -84,6 +84,7 @@ export type Database = {
         Row: {
           cost: number
           created_at: string
+          error: Json | null
           id: string
           request: Json
           response: Json
@@ -93,6 +94,7 @@ export type Database = {
         Insert: {
           cost: number
           created_at?: string
+          error?: Json | null
           id?: string
           request?: Json
           response?: Json
@@ -102,6 +104,7 @@ export type Database = {
         Update: {
           cost?: number
           created_at?: string
+          error?: Json | null
           id?: string
           request?: Json
           response?: Json
@@ -244,6 +247,7 @@ export type Database = {
       versions: {
         Row: {
           created_at: string
+          evaluations: Json
           id: string
           number: number
           params: Json
@@ -254,6 +258,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          evaluations?: Json
           id?: string
           number: number
           params?: Json
@@ -264,6 +269,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          evaluations?: Json
           id?: string
           number?: number
           params?: Json

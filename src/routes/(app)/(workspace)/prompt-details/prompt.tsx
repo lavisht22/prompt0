@@ -27,6 +27,8 @@ import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
 import History from "./components/history";
 import { Version } from "./page";
+import { addEvaluation, copyEvaluations } from "utils/evaluations";
+import { Json } from "supabase/functions/types";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -89,6 +91,14 @@ export default function Prompt({
     new Map()
   );
 
+  const activeVersion = useMemo(() => {
+    return versions.find((v) => v.id === activeVersionId) || null;
+  }, [activeVersionId, versions]);
+
+  const evaluations = useMemo(() => {
+    return (activeVersion?.evaluations as unknown as Evaluation[]) || [];
+  }, [activeVersion]);
+
   const { handleSubmit, control, reset, formState, getValues } =
     useForm<FormValues>({
       resolver: zodResolver(FormSchema),
@@ -99,10 +109,6 @@ export default function Prompt({
     setDirty(formState.isDirty);
   }, [formState.isDirty, setDirty]);
 
-  const activeVersion = useMemo(() => {
-    return versions.find((v) => v.id === activeVersionId) || null;
-  }, [activeVersionId, versions]);
-
   useEffect(() => {
     if (activeVersion !== null) {
       reset({
@@ -111,6 +117,14 @@ export default function Prompt({
       } as unknown as FormValues);
     }
   }, [activeVersion, reset]);
+
+  useEffect(() => {
+    const lastEvaluation = evaluations[evaluations.length - 1];
+
+    if (lastEvaluation) {
+      setVariableValues(new Map(Object.entries(lastEvaluation.variables)));
+    }
+  }, [evaluations]);
 
   const {
     fields: messages,
@@ -122,11 +136,7 @@ export default function Prompt({
   });
 
   const generate = useCallback(
-    async (
-      promptId: string,
-      versionId: string,
-      variables: Map<string, string>
-    ) => {
+    async (version: Version, variables: Map<string, string>) => {
       setResponse("");
 
       const response = await stream(
@@ -134,8 +144,8 @@ export default function Prompt({
         {
           method: "POST",
           body: JSON.stringify({
-            prompt_id: promptId,
-            version_id: versionId,
+            prompt_id: version.prompt_id,
+            version_id: version.id,
             stream: true,
             variables: Object.fromEntries(variables),
           }),
@@ -146,6 +156,8 @@ export default function Prompt({
           },
         }
       );
+
+      let responseText = "";
 
       for await (const event of response) {
         if (!event.data) {
@@ -159,7 +171,25 @@ export default function Prompt({
         };
 
         setResponse((prev) => (prev += data.delta.content || ""));
+        responseText += data.delta.content || "";
       }
+
+      const versionEvaluations = version.evaluations as unknown as Evaluation[];
+
+      // Add to evaluations for this version
+      const newEvaluations = addEvaluation(versionEvaluations, {
+        variables: Object.fromEntries(variables),
+        response: responseText,
+        created_at: new Date().toISOString(),
+      });
+
+      await supabase
+        .from("versions")
+        .update({
+          evaluations: newEvaluations as unknown as Json,
+        })
+        .eq("id", version.id)
+        .throwOnError();
     },
     []
   );
@@ -185,13 +215,14 @@ export default function Prompt({
             cleanedVariables.set(variable, variableValue);
           }
         }
-
         setVariableValues(cleanedVariables);
 
         setSaving(true);
 
+        let version: Version | null = activeVersion;
+
         let promptIdToBeUsed: string = promptId;
-        let versionIdToBeUsed: string = activeVersionId || "";
+        let evaluationsToAdd: Evaluation[] = evaluations;
 
         if (formState.isDirty) {
           if (promptId === "create") {
@@ -224,6 +255,18 @@ export default function Prompt({
             promptIdToBeUsed = createdPrompt.id;
           }
 
+          // Determine which evaluations to copy over from previous version
+          const prevEvaluations = copyEvaluations(
+            evaluations,
+            cleanedVariables
+          );
+
+          evaluationsToAdd = addEvaluation(prevEvaluations, {
+            variables: Object.fromEntries(cleanedVariables),
+            response: null,
+            created_at: new Date().toISOString(),
+          });
+
           const number = Math.max(...versions.map((v) => v.number), 0) + 1;
 
           const { data, error } = await supabase
@@ -239,6 +282,7 @@ export default function Prompt({
                 temperature: values.temperature,
                 response_format: values.response_format,
               },
+              evaluations: evaluationsToAdd as unknown as Json,
             })
             .select()
             .single();
@@ -247,22 +291,23 @@ export default function Prompt({
             throw error;
           }
 
+          version = data;
           setVersions([data, ...versions]);
           setActiveVersionId(data.id);
-          versionIdToBeUsed = data.id;
+
           reset(values);
 
           if (promptId === "create") {
-            navigate(
-              `/${activeWorkspace.slug}/prompts/${promptIdToBeUsed}?generate=true`
-            );
-          }
+            navigate(`/${activeWorkspace.slug}/prompts/${version.prompt_id}`);
 
-          return;
+            return;
+          }
         }
 
-        // Call the generate function
-        await generate(promptIdToBeUsed, versionIdToBeUsed, cleanedVariables);
+        if (version) {
+          // Call the generate function
+          await generate(version, cleanedVariables);
+        }
       } catch (error) {
         console.error(error);
         toast.error("Oops! Something went wrong.");
@@ -271,8 +316,9 @@ export default function Prompt({
       }
     },
     [
-      activeVersionId,
+      activeVersion,
       activeWorkspace,
+      evaluations,
       formState.isDirty,
       generate,
       name,
