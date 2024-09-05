@@ -124,6 +124,7 @@ export default function PromptDetailsPage() {
       {activeTab === "evaluate" && (
         <Evaluate
           activeVersionId={activeVersionId}
+          setActiveVersionId={setActiveVersionId}
           versions={versions}
           setVersions={setVersions}
         />

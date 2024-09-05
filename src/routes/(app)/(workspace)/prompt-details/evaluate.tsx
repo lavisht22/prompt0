@@ -25,12 +25,15 @@ import toast from "react-hot-toast";
 import { addEvaluation } from "utils/evaluations";
 import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
 import AddVariablesDialog from "./components/add-variables-dialog";
+import History from "./components/history";
 export default function Evaluate({
   activeVersionId,
   versions,
   setVersions,
+  setActiveVersionId,
 }: {
   activeVersionId: string | null;
+  setActiveVersionId: Dispatch<SetStateAction<string | null>>;
   versions: Version[];
   setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
@@ -311,7 +314,9 @@ export default function Evaluate({
         </div>
       </div>
       <div className="flex items-center absolute right-3 top-0 h-12">
+        <History versions={versions} setActiveVersionId={setActiveVersionId} />
         <Button
+          className="ml-2"
           size="sm"
           color="primary"
           startContent={<LuPlay />}
