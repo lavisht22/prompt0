@@ -7,6 +7,7 @@ import {
   TableRow,
   TableCell,
   getKeyValue,
+  useDisclosure,
 } from "@nextui-org/react";
 import { Version } from "./page";
 import {
@@ -23,6 +24,7 @@ import { Json } from "supabase/functions/types";
 import toast from "react-hot-toast";
 import { addEvaluation } from "utils/evaluations";
 import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
+import AddVariablesDialog from "./components/add-variables-dialog";
 export default function Evaluate({
   activeVersionId,
   versions,
@@ -34,6 +36,7 @@ export default function Evaluate({
 }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [runningRowIndex, setRunningRowIndex] = useState<number | null>(null);
+  const { isOpen, onOpenChange } = useDisclosure();
 
   const activeVersion = useMemo(() => {
     return versions.find((v) => v.id === activeVersionId) || null;
@@ -47,9 +50,11 @@ export default function Evaluate({
 
   const columns = useMemo(() => {
     const allVariables = new Set<string>();
+
     evaluations.forEach((evaluation) => {
       Object.keys(evaluation.variables).forEach((key) => allVariables.add(key));
     });
+
     return [
       ...Array.from(allVariables).map((variable) => ({
         key: variable,
@@ -190,6 +195,42 @@ export default function Evaluate({
     [activeVersion, evaluations, setVersions]
   );
 
+  const handleAddRow = useCallback(
+    async (values: Record<string, string>) => {
+      if (!activeVersion) return;
+
+      const evaluationsCp = [...evaluations];
+      const updatedEvaluations = addEvaluation(evaluations, {
+        variables: values,
+        response: null,
+        created_at: new Date().toISOString(),
+      });
+
+      setEvaluations(updatedEvaluations);
+
+      try {
+        const { data, error } = await supabase
+          .from("versions")
+          .update({ evaluations: updatedEvaluations as unknown as Json })
+          .eq("id", activeVersion.id)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setVersions((prev) =>
+          prev.map((v) => (v.id === activeVersion.id ? data : v))
+        );
+      } catch {
+        toast.error("Failed to add row");
+        setEvaluations(evaluationsCp);
+      }
+    },
+    [evaluations, activeVersion, setVersions]
+  );
+
   return (
     <>
       <div className="flex-1 overflow-hidden flex flex-col ">
@@ -200,7 +241,11 @@ export default function Evaluate({
             shadow="none"
             bottomContent={
               <div className="flex items-center">
-                <Button size="sm" startContent={<LuPlus />}>
+                <Button
+                  size="sm"
+                  startContent={<LuPlus />}
+                  onPress={onOpenChange}
+                >
                   Add Row
                 </Button>
               </div>
@@ -213,7 +258,7 @@ export default function Evaluate({
             </TableHeader>
             <TableBody items={rows}>
               {(item) => (
-                <TableRow key={item.key}>
+                <TableRow key={item.key} className="border-b">
                   {(columnKey) => (
                     <TableCell>
                       {columnKey === "response" && item[columnKey] === null ? (
@@ -257,6 +302,14 @@ export default function Evaluate({
           Run all
         </Button>
       </div>
+      <AddVariablesDialog
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        variables={columns
+          .filter((c) => c.key !== "actions" && c.key !== "response")
+          .map((c) => c.key)}
+        onAdd={handleAddRow}
+      />
     </>
   );
 }
