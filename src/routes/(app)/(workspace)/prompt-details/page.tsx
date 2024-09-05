@@ -123,7 +123,9 @@ export default function PromptDetailsPage() {
           setDirty={setDirty}
         />
       )}
-      {activeTab === "evaluate" && <Evaluate />}
+      {activeTab === "evaluate" && (
+        <Evaluate activeVersion={activeVersion} dirty={dirty} />
+      )}
     </div>
   );
 }
