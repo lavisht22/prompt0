@@ -22,7 +22,7 @@ import supabase from "utils/supabase";
 import { Json } from "supabase/functions/types";
 import toast from "react-hot-toast";
 import { addEvaluation } from "utils/evaluations";
-
+import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
 export default function Evaluate({
   activeVersionId,
   versions,
@@ -33,6 +33,7 @@ export default function Evaluate({
   setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [runningRowIndex, setRunningRowIndex] = useState<number | null>(null);
 
   const activeVersion = useMemo(() => {
     return versions.find((v) => v.id === activeVersionId) || null;
@@ -55,6 +56,7 @@ export default function Evaluate({
         label: `{{${variable}}}`,
       })),
       { key: "response", label: "Response" },
+      { key: "actions", label: "Actions" }, // New column
     ];
   }, [evaluations]);
 
@@ -64,6 +66,7 @@ export default function Evaluate({
         key: index.toString(),
         ...evaluation.variables,
         response: evaluation.response || null, // Change '-' to null
+        actions: null, // Add this line for the new column
       })),
     [evaluations]
   );
@@ -71,6 +74,8 @@ export default function Evaluate({
   const handleRunEvaluation = useCallback(
     async (rowIndex: number) => {
       if (!activeVersion) return;
+
+      setRunningRowIndex(rowIndex);
 
       const evaluation = evaluations[rowIndex];
       const variables = new Map(Object.entries(evaluation.variables));
@@ -147,6 +152,39 @@ export default function Evaluate({
       } catch (error) {
         console.error("Error running evaluation:", error);
         toast.error("Oops! Something went wrong while running the evaluation.");
+      } finally {
+        setRunningRowIndex(null);
+      }
+    },
+    [activeVersion, evaluations, setVersions]
+  );
+
+  const handleDeleteEvaluation = useCallback(
+    async (index: number) => {
+      if (!activeVersion) return;
+
+      const evaluationsCp = [...evaluations];
+      const updatedEvaluations = evaluations.filter((_, i) => i !== index);
+      setEvaluations(updatedEvaluations);
+
+      try {
+        const { data, error } = await supabase
+          .from("versions")
+          .update({ evaluations: updatedEvaluations as unknown as Json })
+          .eq("id", activeVersion.id)
+          .select()
+          .single();
+
+        if (error) {
+          throw error;
+        }
+
+        setVersions((prev) =>
+          prev.map((v) => (v.id === activeVersion.id ? data : v))
+        );
+      } catch {
+        toast.error("Failed to delete evaluation");
+        setEvaluations(evaluationsCp);
       }
     },
     [activeVersion, evaluations, setVersions]
@@ -156,7 +194,18 @@ export default function Evaluate({
     <>
       <div className="flex-1 overflow-hidden flex flex-col ">
         <div className="flex-1 overflow-y-auto relative">
-          <Table aria-label="Evaluations table" radius="none" shadow="none">
+          <Table
+            aria-label="Evaluations table"
+            radius="none"
+            shadow="none"
+            bottomContent={
+              <div className="flex items-center">
+                <Button size="sm" startContent={<LuPlus />}>
+                  Add Row
+                </Button>
+              </div>
+            }
+          >
             <TableHeader columns={columns}>
               {(column) => (
                 <TableColumn key={column.key}>{column.label}</TableColumn>
@@ -169,12 +218,28 @@ export default function Evaluate({
                     <TableCell>
                       {columnKey === "response" && item[columnKey] === null ? (
                         <Button
-                          color="primary"
-                          variant="bordered"
                           size="sm"
+                          startContent={<LuPlay />}
                           onClick={() => handleRunEvaluation(Number(item.key))}
+                          isLoading={runningRowIndex === Number(item.key)}
+                          isDisabled={
+                            runningRowIndex !== null &&
+                            runningRowIndex !== Number(item.key)
+                          }
                         >
                           Run
+                        </Button>
+                      ) : columnKey === "actions" ? (
+                        <Button
+                          color="danger"
+                          variant="light"
+                          size="sm"
+                          isIconOnly
+                          onClick={() =>
+                            handleDeleteEvaluation(Number(item.key))
+                          }
+                        >
+                          <LuTrash2 />
                         </Button>
                       ) : (
                         getKeyValue(item, columnKey) || "-"
