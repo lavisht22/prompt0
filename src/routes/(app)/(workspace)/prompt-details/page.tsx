@@ -108,7 +108,7 @@ export default function PromptDetailsPage() {
             onSelectionChange={(key) => setActiveTab(key as string)}
           >
             <Tab key="prompt" title="Prompt" />
-            <Tab key="evaluate" title="Evaluate" />
+            <Tab key="evaluate" title="Evaluate" isDisabled={dirty} />
           </Tabs>
         </div>
       </div>
