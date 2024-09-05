@@ -36,6 +36,7 @@ export default function Evaluate({
 }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [runningRowIndex, setRunningRowIndex] = useState<number | null>(null);
+  const [runningAll, setRunningAll] = useState(false);
   const { isOpen, onOpenChange } = useDisclosure();
 
   const activeVersion = useMemo(() => {
@@ -231,6 +232,18 @@ export default function Evaluate({
     [evaluations, activeVersion, setVersions]
   );
 
+  const handleRunRemaining = useCallback(async () => {
+    setRunningAll(true);
+    await Promise.all(
+      evaluations.map((evaluation, index) => {
+        if (evaluation.response === null) {
+          return handleRunEvaluation(index);
+        }
+      })
+    );
+    setRunningAll(false);
+  }, [evaluations, handleRunEvaluation]);
+
   return (
     <>
       <div className="flex-1 overflow-hidden flex flex-col ">
@@ -298,8 +311,14 @@ export default function Evaluate({
         </div>
       </div>
       <div className="flex items-center absolute right-3 top-0 h-12">
-        <Button size="sm" color="primary">
-          Run all
+        <Button
+          size="sm"
+          color="primary"
+          startContent={<LuPlay />}
+          onPress={handleRunRemaining}
+          isLoading={runningAll}
+        >
+          Run Remaining
         </Button>
       </div>
       <AddVariablesDialog
