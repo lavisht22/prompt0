@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Name from "./components/name";
 import { useParams } from "react-router-dom";
 import { Tabs, Tab } from "@nextui-org/react";
@@ -71,10 +71,6 @@ export default function PromptDetailsPage() {
     init();
   }, [activeWorkspace, promptId]);
 
-  const activeVersion = useMemo(() => {
-    return versions.find((v) => v.id === activeVersionId) || null;
-  }, [activeVersionId, versions]);
-
   if (loading) {
     return <FullSpinner />;
   }
@@ -90,9 +86,11 @@ export default function PromptDetailsPage() {
         <div className="flex items-center">
           <Name value={name} onValueChange={setName} promptId={promptId} />
 
-          {activeVersion && (
+          {activeVersionId && (
             <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
-              <span className="text-xs font-bold">v{activeVersion.number}</span>
+              <span className="text-xs font-bold">
+                v{versions.find((v) => v.id === activeVersionId)?.number}
+              </span>
             </div>
           )}
 
@@ -124,7 +122,11 @@ export default function PromptDetailsPage() {
         />
       )}
       {activeTab === "evaluate" && (
-        <Evaluate activeVersion={activeVersion} dirty={dirty} />
+        <Evaluate
+          activeVersionId={activeVersionId}
+          versions={versions}
+          setVersions={setVersions}
+        />
       )}
     </div>
   );
