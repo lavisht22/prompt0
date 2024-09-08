@@ -3,6 +3,11 @@ on:
   push:
     branches:
       - develop
+
+env:
+  VITE_API_URL: ${{ secrets.VITE_API_URL }}
+  VITE_ANOTHER_VAR: ${{ secrets.VITE_ANOTHER_VAR }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -18,6 +23,9 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_ANOTHER_VAR: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
       - name: Copy index.html to 200.html
         run: cp ./dist/index.html ./dist/200.html
       - name: Deploy to Surge
