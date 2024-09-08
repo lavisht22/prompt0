@@ -1,8 +1,18 @@
 {
-  "name": "promptlab",
+  "name": "prompt0",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "author": {
+    "name": "Lavish Thakkar",
+    "email": "lavisht22@gmail.com"
+  },
+  "homepage": "https://prompt0.surge.sh",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lavisht22/prompt0.git"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
