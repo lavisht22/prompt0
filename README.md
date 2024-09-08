@@ -1,6 +1,13 @@
-# prompt0
+<p align="center">
+<img style="align:center;" src="./public/logo.svg" alt="prompt0 Logo" width="100" />
+</p>
 
-prompt0 (pronounced: "prompt zero") is a free and open-source prompt management tool. It’s designed to streamline the entire prompt lifecycle — from ideation and writing to evaluation, deployment, and analytics. prompt0 offers an efficient and centralized platform to manage prompts across various LLM providers (including OpenAI, Anthropic, and more).
+<h1 align="center">prompt0</h1>
+<h3 align="center">Open source prompt management</h3>
+
+## Overview
+
+prompt0 (🔊 "prompt zero") is a free and open-source prompt management tool. It’s designed to streamline the entire prompt lifecycle — from ideation and writing to evaluation, deployment, and analytics. prompt0 offers an efficient and centralized platform to manage prompts across various LLM providers (including OpenAI, Anthropic, and more).
 
 ## Features
 
@@ -21,10 +28,12 @@ Pricing for the managed version is undecided, but it will remain affordable to c
 ## Stack
 
 ### Backend
+
 - **[Supabase](https://supabase.com/)**: Manages the database, authentication, and real-time updates.
 - **[Portkey AI Gateway](https://github.com/Portkey-AI/gateway)**: Adds compatibility with multiple LLM providers (to be replaced with an in-house solution in future versions).
 
 ### Frontend
+
 - **TypeScript**
 - **React**
 - **Vite**
@@ -35,7 +44,7 @@ Pricing for the managed version is undecided, but it will remain affordable to c
 - Replace Portkey AI Gateway with a custom, in-house solution for lower latency.
 - Expand support for more LLM providers.
 - Introduce more advanced prompt analytics and evaluation features.
-  
+
 ## Contributing
 
 We welcome contributions! Please check out our [contributing guide](CONTRIBUTING.md) for guidelines on how to get involved.
