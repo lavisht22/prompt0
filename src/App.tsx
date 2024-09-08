@@ -20,6 +20,7 @@ import PromptDetailsPage from "routes/(app)/(workspace)/prompt-details/page";
 import { ThemeProvider } from "next-themes";
 import { NextUIProvider } from "@nextui-org/react";
 import ProviderDetailsPage from "routes/(app)/(workspace)/provider-details/page";
+import LogsPage from "routes/(app)/(workspace)/logs/page";
 
 const RootLayout = () => {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ const router = createBrowserRouter([
               },
               {
                 path: "logs",
-                element: <div>Logs Page</div>,
+                element: <LogsPage />,
               },
             ],
           },
