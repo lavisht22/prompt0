@@ -1,0 +1,24 @@
+name: Deploy to Surge
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Copy index.html to 200.html
+        run: cp ./dist/index.html ./dist/200.html
+      - name: Deploy to Surge
+        run: npx surge ./dist prompt0.surge.sh --token ${{ secrets.SURGE_TOKEN }}
