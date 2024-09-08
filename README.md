@@ -3,9 +3,6 @@
 </p>
 
 <h1 align="center">prompt0</h1>
-<h3 align="center">Open source prompt management</h3>
-
-## Overview
 
 prompt0 (🔊 "prompt zero") is a free and open-source prompt management tool. It’s designed to streamline the entire prompt lifecycle — from ideation and writing to evaluation, deployment, and analytics. prompt0 offers an efficient and centralized platform to manage prompts across various LLM providers (including OpenAI, Anthropic, and more).
 
