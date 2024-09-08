@@ -14,6 +14,10 @@ const LINKS = [
     name: "Providers",
     to: "providers",
   },
+  {
+    name: "Logs",
+    to: "logs",
+  },
 ];
 
 export default function Sidebar() {

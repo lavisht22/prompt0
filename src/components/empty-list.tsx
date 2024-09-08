@@ -1,18 +1,30 @@
-import { Button } from "@nextui-org/react";
+import { Button, Spinner } from "@nextui-org/react";
 import { LuPlus } from "react-icons/lu";
 import { LuInbox } from "react-icons/lu";
 
 export default function EmptyList({
+  loading,
   title,
   description,
   buttonText,
   onButtonClick,
 }: {
+  loading?: boolean;
   title: string;
   description: string;
   buttonText?: string;
   onButtonClick?: () => void;
 }) {
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-4 text-center h-full overflow-hidden">
+        <div className="flex items-center justify-center">
+          <Spinner />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 text-center h-full overflow-hidden">
       <LuInbox className="text-6xl text-default-300 mb-4" />
