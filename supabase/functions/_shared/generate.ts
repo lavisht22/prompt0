@@ -2,7 +2,7 @@ import { v4 as uuid } from "https://esm.sh/uuid@10.0.0";
 import { OpenAI } from "https://esm.sh/openai@4.57.0";
 
 import { ChatResponse } from "./types.ts";
-import { StreamResponse, SuccessResponse } from "./response.ts";
+import { ErrorResponse, StreamResponse, SuccessResponse } from "./response.ts";
 import { Json } from "../types.ts";
 import { serviceClient } from "./supabase.ts";
 
@@ -97,6 +97,7 @@ async function insertLog(
     version_id: string,
     request: unknown,
     response: unknown,
+    error: unknown,
 ) {
     await serviceClient.from("logs").insert({
         id,
@@ -105,6 +106,7 @@ async function insertLog(
         cost: 0,
         request,
         response,
+        error,
     });
 }
 
@@ -154,106 +156,130 @@ export async function generate(
 
     params.messages = applyVariables(params.messages, variables || {});
 
-    if (stream) {
-        const encoder = new TextEncoder();
+    console.log("params", params);
 
-        const constructedResponse: ChatResponse = {
-            id,
-            model: "",
-            message: {
-                role: "assistant",
-                content: "",
-                refusal: null,
-            },
-            finish_reason: null,
-            prompt_tokens: undefined,
-            completion_tokens: undefined,
-        };
+    try {
+        if (stream) {
+            const encoder = new TextEncoder();
 
-        const response = await client.chat.completions.create({
-            ...params,
-            stream: true,
-            // stream_options: { include_usage: true },  TODO: Figure out an alternative to this
-        });
-
-        const readableStream = new ReadableStream({
-            async start(controller) {
-                if (!version.providers) {
-                    return;
-                }
-
-                for await (const chunk of response) {
-                    if (chunk.choices.length > 0) {
-                        controller.enqueue(
-                            encoder.encode(`data: ${
-                                JSON.stringify({
-                                    id,
-                                    model: chunk.model,
-                                    delta: chunk.choices[0].delta,
-                                    finish_reason:
-                                        chunk.choices[0].finish_reason,
-                                    prompt_tokens: chunk.usage?.prompt_tokens,
-                                    completion_tokens: chunk.usage
-                                        ?.completion_tokens,
-                                })
-                            }\n\n`),
-                        );
-
-                        constructedResponse.model = chunk.model;
-
-                        constructedResponse.message.content = `${
-                            constructedResponse.message.content || ""
-                        }${chunk.choices[0].delta.content || ""}`;
-
-                        constructedResponse.message.refusal =
-                            chunk.choices[0].delta.refusal || null;
-
-                        constructedResponse.finish_reason = chunk.choices[0]
-                            .finish_reason as string;
-
-                        constructedResponse.prompt_tokens = chunk.usage
-                            ?.prompt_tokens;
-                        constructedResponse.completion_tokens = chunk.usage
-                            ?.completion_tokens;
-                    }
-                }
-
-                await insertLog(
-                    id,
-                    version.prompts.workspace_id,
-                    version.id,
-                    params,
-                    constructedResponse,
-                );
-
-                controller.close();
-            },
-        });
-
-        return StreamResponse(readableStream);
-    } else {
-        const response = await client.chat.completions.create({
-            ...params,
-            stream: false,
-        }).then((response) => {
-            return {
+            const constructedResponse: ChatResponse = {
                 id,
-                model: response.model,
-                message: response.choices[0].message,
-                finish_reason: response.choices[0].finish_reason,
-                prompt_tokens: response.usage?.prompt_tokens,
-                completion_tokens: response.usage?.completion_tokens,
-            } as ChatResponse;
-        });
+                model: "",
+                message: {
+                    role: "assistant",
+                    content: "",
+                    refusal: null,
+                },
+                finish_reason: null,
+                prompt_tokens: undefined,
+                completion_tokens: undefined,
+            };
+
+            const response = await client.chat.completions.create({
+                ...params,
+                stream: true,
+                // stream_options: { include_usage: true },  TODO: Figure out an alternative to this
+            });
+
+            const readableStream = new ReadableStream({
+                async start(controller) {
+                    if (!version.providers) {
+                        return;
+                    }
+
+                    for await (const chunk of response) {
+                        if (chunk.choices.length > 0) {
+                            controller.enqueue(
+                                encoder.encode(`data: ${
+                                    JSON.stringify({
+                                        id,
+                                        model: chunk.model,
+                                        delta: chunk.choices[0].delta,
+                                        finish_reason:
+                                            chunk.choices[0].finish_reason,
+                                        prompt_tokens: chunk.usage
+                                            ?.prompt_tokens,
+                                        completion_tokens: chunk.usage
+                                            ?.completion_tokens,
+                                    })
+                                }\n\n`),
+                            );
+
+                            constructedResponse.model = chunk.model;
+
+                            constructedResponse.message.content = `${
+                                constructedResponse.message.content || ""
+                            }${chunk.choices[0].delta.content || ""}`;
+
+                            constructedResponse.message.refusal =
+                                chunk.choices[0].delta.refusal || null;
+
+                            constructedResponse.finish_reason = chunk.choices[0]
+                                .finish_reason as string;
+
+                            constructedResponse.prompt_tokens = chunk.usage
+                                ?.prompt_tokens;
+                            constructedResponse.completion_tokens = chunk.usage
+                                ?.completion_tokens;
+                        }
+                    }
+
+                    await insertLog(
+                        id,
+                        version.prompts.workspace_id,
+                        version.id,
+                        params,
+                        constructedResponse,
+                        null,
+                    );
+
+                    controller.close();
+                },
+            });
+
+            return StreamResponse(readableStream);
+        } else {
+            const response = await client.chat.completions.create({
+                ...params,
+                stream: false,
+            }).then((response) => {
+                return {
+                    id,
+                    model: response.model,
+                    message: response.choices[0].message,
+                    finish_reason: response.choices[0].finish_reason,
+                    prompt_tokens: response.usage?.prompt_tokens,
+                    completion_tokens: response.usage?.completion_tokens,
+                } as ChatResponse;
+            });
+
+            await insertLog(
+                id,
+                version.prompts.workspace_id,
+                version.id,
+                params,
+                response,
+                null,
+            );
+
+            return SuccessResponse(response);
+        }
+    } catch (error) {
+        console.error("Error in generate function:", error);
+
+        const errorResponse = {
+            message: error instanceof Error ? error.message : String(error),
+        };
 
         await insertLog(
             id,
             version.prompts.workspace_id,
             version.id,
             params,
-            response,
+            null,
+            errorResponse,
         );
 
-        return SuccessResponse(response);
+        return ErrorResponse(errorResponse.message);
     }
 }

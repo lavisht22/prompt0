@@ -87,7 +87,7 @@ export type Database = {
           error: Json | null
           id: string
           request: Json
-          response: Json
+          response: Json | null
           version_id: string | null
           workspace_id: string
         }
@@ -97,7 +97,7 @@ export type Database = {
           error?: Json | null
           id?: string
           request?: Json
-          response?: Json
+          response?: Json | null
           version_id?: string | null
           workspace_id: string
         }
@@ -107,7 +107,7 @@ export type Database = {
           error?: Json | null
           id?: string
           request?: Json
-          response?: Json
+          response?: Json | null
           version_id?: string | null
           workspace_id?: string
         }
