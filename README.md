@@ -6,6 +6,10 @@
 
 prompt0 (🔊 "prompt zero") is a free and open-source prompt management tool. It’s designed to streamline the entire prompt lifecycle — from ideation and writing to evaluation, deployment, and analytics. prompt0 offers an efficient and centralized platform to manage prompts across various LLM providers (including OpenAI, Anthropic, and more).
 
+## Where prompt0 is Used?
+
+- [Tribe](https://tribe.best)
+
 ## Features
 
 - **Multi-provider support**: Manage and optimize prompts across 100+ LLM providers using one platform.
