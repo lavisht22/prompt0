@@ -2,7 +2,12 @@ name: Deploy to Surge
 on:
   push:
     branches:
-      - main
+      - develop
+
+env:
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -15,7 +20,7 @@ jobs:
           node-version: 20
           cache: "npm"
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --force
       - name: Build
         run: npm run build
       - name: Copy index.html to 200.html
