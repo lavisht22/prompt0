@@ -37,6 +37,7 @@ export default function Sidebar() {
 
             return (
               <Button
+                key={link.name}
                 variant={isActive ? "flat" : "light"}
                 className="w-full justify-start px-2"
                 href={`/${activeWorkspace?.slug}/${link.to}`}
