@@ -1,6 +1,12 @@
-import { Input, Select, SelectItem, Slider } from "@nextui-org/react";
+import {
+  Select,
+  SelectItem,
+  Slider,
+  Autocomplete,
+  AutocompleteItem,
+} from "@nextui-org/react";
 import { useEffect, useState } from "react";
-import { Control, Controller } from "react-hook-form";
+import { Control, Controller, useWatch } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
 import { FormValues } from "../prompt";
 import supabase from "utils/supabase";
@@ -14,6 +20,7 @@ type Provider = {
 export default function Params({ control }: { control: Control<FormValues> }) {
   const { activeWorkspace } = useWorkspacesStore();
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [modelSuggestions, setModelSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     const init = async () => {
@@ -36,6 +43,32 @@ export default function Params({ control }: { control: Control<FormValues> }) {
     init();
   }, [activeWorkspace]);
 
+  const selectedProviderId = useWatch({
+    control,
+    name: "provider_id",
+  });
+
+  useEffect(() => {
+    const getModelSuggestions = async () => {
+      if (!selectedProviderId) {
+        setModelSuggestions([]);
+        return;
+      }
+
+      const selectedProvider = providers.find(
+        (p) => p.id === selectedProviderId
+      );
+      if (!selectedProvider) return;
+
+      // Here you would fetch the model suggestions based on the provider type
+      // This is a placeholder, replace with actual API call or data source
+      const suggestions = await fetchModelSuggestions(selectedProvider.type);
+      setModelSuggestions(suggestions);
+    };
+
+    getModelSuggestions();
+  }, [selectedProviderId, providers]);
+
   return (
     <>
       <Controller
@@ -46,6 +79,7 @@ export default function Params({ control }: { control: Control<FormValues> }) {
             label="Provider"
             aria-label="Provider"
             isInvalid={fieldState.invalid}
+            disallowEmptySelection
             selectedKeys={new Set([field.value || ""])}
             onSelectionChange={(selectedKeys) => {
               const arr = Array.from(selectedKeys);
@@ -65,12 +99,21 @@ export default function Params({ control }: { control: Control<FormValues> }) {
         name="model"
         control={control}
         render={({ field, fieldState }) => (
-          <Input
+          <Autocomplete
             label="Model"
-            placeholder="Model"
-            {...field}
+            placeholder="Select a model"
             isInvalid={fieldState.invalid}
-          />
+            onSelectionChange={(key) => field.onChange(key)}
+            allowsCustomValue
+            inputValue={field.value}
+            onInputChange={field.onChange}
+          >
+            {modelSuggestions.map((model) => (
+              <AutocompleteItem key={model} value={model}>
+                {model}
+              </AutocompleteItem>
+            ))}
+          </Autocomplete>
         )}
       />
 
@@ -129,4 +172,29 @@ export default function Params({ control }: { control: Control<FormValues> }) {
       />
     </>
   );
+}
+
+async function fetchModelSuggestions(providerType: string): Promise<string[]> {
+  // Replace this with actual API call or data source
+  switch (providerType) {
+    case "openai":
+      return [
+        "o1-mini",
+        "o1-preview",
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4-turbo",
+        "gpt-4",
+        "chatgpt-4o-latest",
+      ];
+    case "anthropic":
+      return [
+        "claude-3-5-sonnet-20240620",
+        "claude-3-opus-20240229",
+        "claude-3-sonnet-20240229",
+        "claude-3-haiku-20240307",
+      ];
+    default:
+      return [];
+  }
 }

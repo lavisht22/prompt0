@@ -21,6 +21,7 @@ export default function VariablesList({
 
         return (
           <Button
+            key={e}
             onPress={openVariablesDialog}
             className="shrink-0 h-6 gap-1 px-2 font-medium"
             size="sm"
