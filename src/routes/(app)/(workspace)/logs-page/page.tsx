@@ -3,7 +3,7 @@ import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
 import { Button } from "@nextui-org/react";
-import Log, { LogT } from "./component/log";
+import Log, { LogT } from "./components/log";
 import { LuRefreshCw } from "react-icons/lu";
 
 export default function LogsPage() {
