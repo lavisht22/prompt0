@@ -8,6 +8,7 @@ import ProviderIcon from "components/provider-icon";
 import { Link, useNavigate } from "react-router-dom";
 import { Database } from "supabase/functions/types";
 import EmptyList from "components/empty-list";
+import { formatDistanceToNow } from "date-fns";
 
 type Provider = Omit<
   Database["public"]["Tables"]["providers"]["Row"],
@@ -104,7 +105,9 @@ export default function ProvidersPage() {
                 <h4 className="text-sm">{provider.name}</h4>
               </div>
               <div>
-                <span className="block text-xs text-default-500">Aug 10</span>
+                <span className="block text-xs text-default-500">
+                  {formatDistanceToNow(new Date(provider.updated_at))}
+                </span>
               </div>
             </Link>
           ))}
