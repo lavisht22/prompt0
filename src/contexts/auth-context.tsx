@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
 import supabase from "../utils/supabase";
@@ -53,13 +51,14 @@ export default function AuthProvider({
                 navigation.location?.pathname || ""
               )}`
             );
+            localStorage.removeItem("lastActiveWorkspace");
           }
         });
 
         setUser(user);
       } catch (error) {
         console.error(error);
-        setError("Could not load the page at the moment.");
+        setError("Unable to load this page at the moment. Please try again.");
       } finally {
         setLoading(false);
       }

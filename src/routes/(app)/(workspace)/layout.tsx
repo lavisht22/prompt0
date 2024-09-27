@@ -32,6 +32,14 @@ export default function WorkspaceLayout() {
   }, [setWorkspaces]);
 
   useEffect(() => {
+    if (!activeWorkspace) {
+      localStorage.removeItem("lastActiveWorkspace");
+    } else {
+      localStorage.setItem("lastActiveWorkspace", activeWorkspace.slug);
+    }
+  }, [activeWorkspace]);
+
+  useEffect(() => {
     try {
       if (workspaces.length === 0) return;
 
