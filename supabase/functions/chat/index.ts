@@ -1,3 +1,5 @@
+import { OpenAI } from "https://esm.sh/openai@4.57.0";
+
 import { generate, Version } from "../_shared/generate.ts";
 import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
 import { serviceClient } from "../_shared/supabase.ts";
@@ -18,12 +20,13 @@ Deno.serve(async (req) => {
 
     const before = Date.now();
 
-    const { prompt_id, stream, variables }: {
+    const { prompt_id, stream, variables, messages }: {
       prompt_id: string;
       stream?: boolean;
       variables?: {
         [key: string]: string;
       };
+      messages?: OpenAI.Chat.ChatCompletionMessageParam[];
     } = await req
       .json();
 
@@ -94,6 +97,7 @@ Deno.serve(async (req) => {
       } as Version,
       stream,
       variables,
+      messages,
     );
   } catch (error) {
     console.error(error);
