@@ -29,23 +29,14 @@ import History from "./components/history";
 import { Version } from "./page";
 import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
-// import Tools from "./components/tools";
+import Tool, { ToolSchema } from "./components/tool";
+import { ToolDialog } from "./components/tool-dialog";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
   UserMessageSchema,
   AssistantMessageSchema,
 ]);
-
-const ToolSchema = z.object({
-  type: z.literal("function"),
-  function: z.object({
-    description: z.string().optional(),
-    name: z.string().max(64),
-    parameters: z.object({}).optional(),
-    strict: z.boolean().optional().default(false),
-  }),
-});
 
 const FormSchema = z.object({
   messages: z.array(MessageSchema),
@@ -114,6 +105,7 @@ export default function Prompt({
   const [name, setName] = useState("");
   const [response, setResponse] = useState("");
   const [variablesOpen, setVariablesOpen] = useState(false);
+  const [addToolOpen, setAddToolOpen] = useState(false);
   const [variableValues, setVariableValues] = useState<Map<string, string>>(
     new Map()
   );
@@ -302,6 +294,7 @@ export default function Prompt({
               number,
               params: {
                 messages: values.messages,
+                tools: values.tools,
                 model: values.model,
                 max_tokens: values.max_tokens,
                 temperature: values.temperature,
@@ -396,6 +389,14 @@ export default function Prompt({
                 variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
+                onPress={() => setAddToolOpen(true)}
+              >
+                Tool
+              </Button>
+              <Button
+                variant="flat"
+                size="sm"
+                startContent={<LuPlus />}
                 onPress={() =>
                   addMessage({
                     role: "user",
@@ -421,6 +422,46 @@ export default function Prompt({
             </div>
 
             <div className="p-4 flex flex-col gap-4">
+              <ToolDialog
+                isOpen={addToolOpen}
+                onOpenChange={setAddToolOpen}
+                value={{
+                  type: "function",
+                  function: {
+                    name: "function_name",
+                    description: "description of the function",
+                    strict: true,
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        property_name: {
+                          type: "string",
+                          description: "description of this property",
+                        },
+                      },
+                      additionalProperties: false,
+                      required: [],
+                    },
+                  },
+                }}
+                onValueChange={(value) => addTool(value)}
+              />
+              {tools.map((_, index) => (
+                <Controller
+                  key={index}
+                  name={`tools.${index}`}
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Tool
+                      value={field.value as z.infer<typeof ToolSchema>}
+                      onValueChange={field.onChange}
+                      isInvalid={fieldState.invalid}
+                      onRemove={() => removeTool(index)}
+                    />
+                  )}
+                />
+              ))}
+
               {messages.map((field, index) => {
                 if (field.role === "system") {
                   return (
