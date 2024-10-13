@@ -1,15 +1,17 @@
 import { Button, Card, CardBody, Chip, Textarea } from "@nextui-org/react";
 import { LuCornerUpLeft } from "react-icons/lu";
-import CodeMirror, { EditorView } from "@uiw/react-codemirror";
-import { json } from "@codemirror/lang-json";
 import { useTheme } from "next-themes";
+import { z } from "zod";
+import { AssistantMessageSchema } from "./assistant-message";
+import ToolResponse from "./tool-response";
+import { Editor } from "@monaco-editor/react";
 
 export default function Response({
   type,
   value,
   onAddToConversation,
 }: {
-  value: string;
+  value: z.infer<typeof AssistantMessageSchema>;
   type: string;
   onAddToConversation: () => void;
 }) {
@@ -23,45 +25,62 @@ export default function Response({
             RESPONSE
           </Chip>
 
-          {type === "json_object" && (
-            <CodeMirror
-              placeholder="Run prompt to see assistant response"
-              value={value}
-              extensions={[json(), EditorView.lineWrapping]}
-              readOnly
-              theme={theme === "dark" ? "dark" : "light"}
-              basicSetup={{
-                lineNumbers: false,
-                foldGutter: false,
-              }}
-            />
+          {!value.content && !value.tool_calls && (
+            <p className="text-sm text-default-500">
+              Run prompt to see assistant response
+            </p>
           )}
 
-          {type === "text" && (
-            <Textarea
-              variant="bordered"
-              readOnly
-              placeholder="Run prompt to see assistant response"
-              minRows={1}
-              maxRows={100000}
-              value={value}
-            />
+          {value.content && (
+            <>
+              {type === "json_object" && (
+                <Editor
+                  theme={theme}
+                  height="300px"
+                  defaultLanguage="json"
+                  value={value.content}
+                  options={{
+                    minimap: { enabled: false },
+                    lineNumbers: "off",
+                    wordWrap: "on",
+                  }}
+                />
+              )}
+
+              {type === "text" && (
+                <Textarea
+                  variant="bordered"
+                  readOnly
+                  minRows={1}
+                  maxRows={100000}
+                  value={value.content}
+                />
+              )}
+            </>
           )}
 
-          <div>
-            {value.length > 0 && (
-              <Button
-                size="sm"
-                variant="flat"
-                startContent={<LuCornerUpLeft />}
-                onPress={onAddToConversation}
-              >
-                Add to conversation
-              </Button>
-            )}
-          </div>
+          {value.tool_calls && value.tool_calls.length > 0 && (
+            <>
+              {value.tool_calls.map((toolCall) => (
+                <ToolResponse key={toolCall.id} value={toolCall} />
+              ))}
+            </>
+          )}
         </CardBody>
       </Card>
+      <div>
+        {((value.content && value.content.length > 0) ||
+          (value.tool_calls && value.tool_calls.length > 0)) && (
+          <Button
+            size="sm"
+            variant="flat"
+            startContent={<LuCornerUpLeft />}
+            onPress={onAddToConversation}
+          >
+            Add to conversation
+          </Button>
+        )}
+      </div>
     </>
   );
 }

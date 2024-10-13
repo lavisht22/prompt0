@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Editor } from "@monaco-editor/react";
 import { useEffect, useState } from "react";
 import { LuChevronDown, LuTrash2 } from "react-icons/lu";
+import { useTheme } from "next-themes";
 
 export function ToolDialog({
   isOpen,
@@ -29,6 +30,8 @@ export function ToolDialog({
   onValueChange: (value: z.infer<typeof ToolSchema>) => void;
   onRemove?: () => void;
 }) {
+  const { theme } = useTheme();
+
   const [internalValue, setInternalValue] = useState("");
 
   useEffect(() => {
@@ -169,6 +172,7 @@ export function ToolDialog({
           </div>
 
           <Editor
+            theme={theme}
             className="border-t"
             height="500px"
             value={internalValue}

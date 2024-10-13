@@ -2,10 +2,25 @@ import { Button, Card, CardBody, Chip, cn, Textarea } from "@nextui-org/react";
 import { LuTrash2 } from "react-icons/lu";
 import { z } from "zod";
 import VariablesList from "./variables-list";
+import ToolResponse from "./tool-response";
 
 export const AssistantMessageSchema = z.object({
   role: z.literal("assistant"),
-  content: z.string().optional(),
+  content: z.string().optional().nullable(),
+  tool_calls: z
+    .array(
+      z.object({
+        index: z.number(),
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({
+          name: z.string(),
+          arguments: z.string(),
+        }),
+      })
+    )
+    .optional()
+    .nullable(),
 });
 
 type AssistantMessage = z.infer<typeof AssistantMessageSchema>;
@@ -32,21 +47,32 @@ export default function AssistantMessage({
           ASSISTANT
         </Chip>
 
-        <Textarea
-          variant="bordered"
-          className="mb-2"
-          aria-label="Assistant message"
-          placeholder="Enter assistant message..."
-          minRows={1}
-          maxRows={100000}
-          value={value.content}
-          onChange={(e) =>
-            onValueChange({
-              ...value,
-              content: e.target.value,
-            })
-          }
-        />
+        {value.content && (
+          <Textarea
+            variant="bordered"
+            className="mb-2"
+            aria-label="Assistant message"
+            placeholder="Enter assistant message..."
+            minRows={1}
+            maxRows={100000}
+            value={value.content}
+            onChange={(e) =>
+              onValueChange({
+                ...value,
+                content: e.target.value,
+              })
+            }
+          />
+        )}
+
+        {value.tool_calls && value.tool_calls.length > 0 && (
+          <>
+            {value.tool_calls.map((toolCall) => (
+              <ToolResponse key={toolCall.id} value={toolCall} />
+            ))}
+          </>
+        )}
+
         <VariablesList
           text={value.content ?? ""}
           variableValues={variableValues}

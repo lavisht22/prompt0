@@ -32,7 +32,7 @@ export default function Tool({
     <>
       <Card
         className={cn(
-          "w-full flex flex-row bg-default-100 gap-2 items-center px-3 py-2",
+          "flex flex-row gap-2 items-center px-3 py-2",
           isInvalid && "bg-danger-100"
         )}
         isPressable

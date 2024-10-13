@@ -31,6 +31,7 @@ import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
 import Tool, { ToolSchema } from "./components/tool";
 import { ToolDialog } from "./components/tool-dialog";
+import { Evaluation } from "./types";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -103,7 +104,13 @@ export default function Prompt({
   const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
-  const [response, setResponse] = useState("");
+  const [response, setResponse] = useState<
+    z.infer<typeof AssistantMessageSchema>
+  >({
+    role: "assistant",
+    content: null,
+    tool_calls: null,
+  });
   const [variablesOpen, setVariablesOpen] = useState(false);
   const [addToolOpen, setAddToolOpen] = useState(false);
   const [variableValues, setVariableValues] = useState<Map<string, string>>(
@@ -154,9 +161,13 @@ export default function Prompt({
 
   const generate = useCallback(
     async (version: Version, variables: Map<string, string>) => {
-      setResponse("");
+      setResponse({
+        role: "assistant",
+        content: null,
+        tool_calls: null,
+      });
 
-      const response = await stream(
+      const events = await stream(
         "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
         {
           method: "POST",
@@ -174,9 +185,7 @@ export default function Prompt({
         }
       );
 
-      let responseText = "";
-
-      for await (const event of response) {
+      for await (const event of events) {
         if (!event.data) {
           continue;
         }
@@ -184,11 +193,56 @@ export default function Prompt({
         const data = JSON.parse(event.data) as {
           delta: {
             content: string | null;
+            tool_calls: {
+              index: number;
+              id?: string;
+              type?: "function";
+              function: {
+                name?: string;
+                arguments: string;
+              };
+            }[];
           };
         };
 
-        setResponse((prev) => (prev += data.delta.content || ""));
-        responseText += data.delta.content || "";
+        setResponse((prev) => {
+          if (data.delta.content) {
+            if (!prev.content) {
+              prev.content = "";
+            }
+
+            prev.content += data.delta.content;
+          }
+
+          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+            if (!prev.tool_calls) {
+              prev.tool_calls = [];
+            }
+
+            data.delta.tool_calls.forEach((tc) => {
+              const prevIndex = prev.tool_calls?.findIndex(
+                (t) => t.index === tc.index
+              );
+
+              if (prevIndex === -1 || prevIndex === undefined) {
+                prev.tool_calls?.push({
+                  index: tc.index,
+                  id: tc.id ?? "",
+                  type: tc.type ?? "function",
+                  function: {
+                    name: tc.function.name ?? "",
+                    arguments: tc.function.arguments,
+                  },
+                });
+              } else {
+                prev.tool_calls![prevIndex].function.arguments +=
+                  tc.function.arguments;
+              }
+            });
+          }
+
+          return prev;
+        });
       }
 
       const versionEvaluations = version.evaluations as unknown as Evaluation[];
@@ -196,7 +250,7 @@ export default function Prompt({
       // Add to evaluations for this version
       const newEvaluations = addEvaluation(versionEvaluations, {
         variables: Object.fromEntries(variables),
-        response: responseText,
+        response,
         created_at: new Date().toISOString(),
       });
 
@@ -208,7 +262,7 @@ export default function Prompt({
         .eq("id", version.id)
         .throwOnError();
     },
-    []
+    [response]
   );
 
   const save = useCallback(
@@ -280,7 +334,11 @@ export default function Prompt({
 
           evaluationsToAdd = addEvaluation(prevEvaluations, {
             variables: Object.fromEntries(cleanedVariables),
-            response: null,
+            response: {
+              role: "assistant",
+              content: null,
+              tool_calls: null,
+            },
             created_at: new Date().toISOString(),
           });
 
@@ -389,14 +447,6 @@ export default function Prompt({
                 variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
-                onPress={() => setAddToolOpen(true)}
-              >
-                Tool
-              </Button>
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
                 onPress={() =>
                   addMessage({
                     role: "user",
@@ -461,6 +511,15 @@ export default function Prompt({
                   )}
                 />
               ))}
+
+              <Button
+                variant="flat"
+                size="sm"
+                startContent={<LuPlus />}
+                onPress={() => setAddToolOpen(true)}
+              >
+                Add Tool
+              </Button>
 
               {messages.map((field, index) => {
                 if (field.role === "system") {
@@ -539,11 +598,12 @@ export default function Prompt({
               type={getValues().response_format.type}
               value={response}
               onAddToConversation={() => {
-                addMessage({
+                addMessage(response);
+                setResponse({
                   role: "assistant",
-                  content: response,
+                  content: null,
+                  tool_calls: null,
                 });
-                setResponse("");
               }}
             />
           </div>

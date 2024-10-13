@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useMemo, useState } from "react";
 import { BiCollapseVertical, BiExpandVertical } from "react-icons/bi";
 import { Json } from "supabase/functions/types";
+import { useTheme } from "next-themes";
 import Editor from "@monaco-editor/react";
 
 export type LogT = {
@@ -19,6 +20,7 @@ export type LogT = {
 };
 
 export default function Log({ log }: { log: LogT }) {
+  const { theme } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
   const display = useMemo(
@@ -78,6 +80,7 @@ export default function Log({ log }: { log: LogT }) {
       {expanded && (
         <div className="w-full bg-default-50">
           <Editor
+            theme={theme}
             height="500px"
             language="json"
             value={JSON.stringify(display, null, 2)}
