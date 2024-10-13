@@ -43,6 +43,8 @@ export default function Params({ control }: { control: Control<FormValues> }) {
         control={control}
         render={({ field, fieldState }) => (
           <Select
+            variant="bordered"
+            size="sm"
             label="Provider"
             aria-label="Provider"
             isInvalid={fieldState.invalid}
@@ -66,6 +68,8 @@ export default function Params({ control }: { control: Control<FormValues> }) {
         control={control}
         render={({ field, fieldState }) => (
           <Input
+            variant="bordered"
+            size="sm"
             label="Model"
             placeholder="Model"
             {...field}
@@ -79,6 +83,8 @@ export default function Params({ control }: { control: Control<FormValues> }) {
         control={control}
         render={({ field, fieldState }) => (
           <Select
+            variant="bordered"
+            size="sm"
             label="Response Format"
             isInvalid={fieldState.invalid}
             selectedKeys={new Set([field.value || ""])}
@@ -104,6 +110,9 @@ export default function Params({ control }: { control: Control<FormValues> }) {
           <Slider
             size="sm"
             label="Temperature"
+            classNames={{
+              label: "text-xs",
+            }}
             minValue={0}
             maxValue={2}
             step={0.01}
@@ -120,6 +129,9 @@ export default function Params({ control }: { control: Control<FormValues> }) {
           <Slider
             size="sm"
             label="Max Tokens"
+            classNames={{
+              label: "text-xs",
+            }}
             minValue={1}
             maxValue={4095}
             value={field.value}
