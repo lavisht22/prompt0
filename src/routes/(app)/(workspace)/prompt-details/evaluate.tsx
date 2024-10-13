@@ -18,14 +18,17 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-import { stream } from "fetch-event-stream";
 import supabase from "utils/supabase";
 import { Json } from "supabase/functions/types";
 import toast from "react-hot-toast";
-import { addEvaluation } from "utils/evaluations";
 import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
 import AddVariablesDialog from "./components/add-variables-dialog";
 import History from "./components/history";
+import { Evaluation } from "./types";
+import Response from "./components/response";
+import { z } from "zod";
+import { AssistantMessageSchema } from "./components/assistant-message";
+
 export default function Evaluate({
   activeVersionId,
   versions,
@@ -38,7 +41,9 @@ export default function Evaluate({
   setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
-  const [runningRowIndex, setRunningRowIndex] = useState<number | null>(null);
+  const [runningRowIndexes, setRunningRowIndexes] = useState<Set<number>>(
+    new Set()
+  );
   const [runningAll, setRunningAll] = useState(false);
   const { isOpen, onOpenChange } = useDisclosure();
 
@@ -80,72 +85,44 @@ export default function Evaluate({
     [evaluations]
   );
 
-  const handleRunEvaluation = useCallback(
-    async (rowIndex: number) => {
-      if (!activeVersion) return;
+  const evaluate = useCallback(
+    async (variables: { [key: string]: string }) => {
+      if (!activeVersion) {
+        throw new Error("No active version");
+      }
 
-      setRunningRowIndex(rowIndex);
-
-      const evaluation = evaluations[rowIndex];
-      const variables = new Map(Object.entries(evaluation.variables));
-
-      try {
-        const response = await stream(
-          "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
-          {
-            method: "POST",
-            body: JSON.stringify({
-              prompt_id: activeVersion.prompt_id,
-              version_id: activeVersion.id,
-              stream: true,
-              variables: Object.fromEntries(variables),
-            }),
-            headers: {
-              Authorization: `Bearer ${
-                import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
-              }`,
-            },
-          }
-        );
-
-        let responseText = "";
-
-        for await (const event of response) {
-          if (!event.data) {
-            continue;
-          }
-
-          const data = JSON.parse(event.data) as {
-            delta: {
-              content: string | null;
-            };
-          };
-
-          responseText += data.delta.content || "";
-
-          // Update the state immediately for each chunk
-          setEvaluations((prevEvaluations) => {
-            const updatedEvaluations = [...prevEvaluations];
-            updatedEvaluations[rowIndex] = {
-              ...updatedEvaluations[rowIndex],
-              response: responseText,
-            };
-            return updatedEvaluations;
-          });
+      const response = await fetch(
+        "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            prompt_id: activeVersion.prompt_id,
+            version_id: activeVersion.id,
+            stream: false,
+            variables,
+          }),
+          headers: {
+            Authorization: `Bearer ${
+              import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
+            }`,
+          },
         }
+      ).then((res) => res.json());
 
-        // Update the database after streaming is complete
-        const updatedEvaluations = addEvaluation(evaluations, {
-          variables: evaluation.variables,
-          response: responseText,
-          created_at: new Date().toISOString(),
-        });
+      return response.message;
+    },
+    [activeVersion]
+  );
 
-        // Update the database
+  const updateVersion = useCallback(
+    async (newEvaluations: Evaluation[]) => {
+      try {
+        if (!activeVersion) return;
+
         const { data, error } = await supabase
           .from("versions")
           .update({
-            evaluations: updatedEvaluations as unknown as Json,
+            evaluations: newEvaluations as unknown as Json,
           })
           .eq("id", activeVersion.id)
           .select()
@@ -159,13 +136,42 @@ export default function Evaluate({
           prev.map((v) => (v.id === activeVersion.id ? data : v))
         );
       } catch (error) {
+        console.error("Error updating version:", error);
+        toast.error("Oops! Something went wrong while updating the version.");
+      }
+    },
+    [activeVersion, setVersions]
+  );
+
+  const handleRunSingle = useCallback(
+    async (rowIndex: number) => {
+      if (!activeVersion) return;
+
+      try {
+        const evaluation = evaluations[rowIndex];
+
+        setRunningRowIndexes((prev) => new Set([...prev, rowIndex]));
+
+        const response = await evaluate(evaluation.variables);
+
+        const updatedEvaluations = evaluations.map((e, i) =>
+          i === rowIndex ? { ...e, response } : e
+        );
+
+        setEvaluations(updatedEvaluations);
+
+        await updateVersion(updatedEvaluations);
+      } catch (error) {
         console.error("Error running evaluation:", error);
         toast.error("Oops! Something went wrong while running the evaluation.");
       } finally {
-        setRunningRowIndex(null);
+        setRunningRowIndexes((prev) => {
+          prev.delete(rowIndex);
+          return prev;
+        });
       }
     },
-    [activeVersion, evaluations, setVersions]
+    [activeVersion, evaluate, evaluations, updateVersion]
   );
 
   const handleDeleteEvaluation = useCallback(
@@ -203,49 +209,60 @@ export default function Evaluate({
     async (values: Record<string, string>) => {
       if (!activeVersion) return;
 
-      const evaluationsCp = [...evaluations];
-      const updatedEvaluations = addEvaluation(evaluations, {
-        variables: values,
-        response: null,
-        created_at: new Date().toISOString(),
-      });
+      const updatedEvaluations = [
+        ...evaluations,
+        {
+          variables: values,
+          response: null,
+          created_at: new Date().toISOString(),
+        },
+      ];
 
       setEvaluations(updatedEvaluations);
 
-      try {
-        const { data, error } = await supabase
-          .from("versions")
-          .update({ evaluations: updatedEvaluations as unknown as Json })
-          .eq("id", activeVersion.id)
-          .select()
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        setVersions((prev) =>
-          prev.map((v) => (v.id === activeVersion.id ? data : v))
-        );
-      } catch {
-        toast.error("Failed to add row");
-        setEvaluations(evaluationsCp);
-      }
+      await updateVersion(updatedEvaluations);
     },
-    [evaluations, activeVersion, setVersions]
+    [activeVersion, evaluations, updateVersion]
   );
 
   const handleRunRemaining = useCallback(async () => {
-    setRunningAll(true);
-    await Promise.all(
-      evaluations.map((evaluation, index) => {
-        if (evaluation.response === null) {
-          return handleRunEvaluation(index);
-        }
-      })
-    );
-    setRunningAll(false);
-  }, [evaluations, handleRunEvaluation]);
+    try {
+      setRunningAll(true);
+
+      const updatedEvaluations = await Promise.all(
+        evaluations.map(async (evaluation, index) => {
+          if (evaluation.response === null) {
+            setRunningRowIndexes((prev) => new Set([...prev, index]));
+            const response = await evaluate(evaluation.variables);
+            setRunningRowIndexes((prev) => {
+              prev.delete(index);
+              return prev;
+            });
+
+            setEvaluations((prev) =>
+              prev.map((e, i) => (i === index ? { ...e, response } : e))
+            );
+
+            return {
+              ...evaluation,
+              response,
+            };
+          }
+
+          return evaluation;
+        })
+      );
+
+      setEvaluations(updatedEvaluations);
+
+      await updateVersion(updatedEvaluations);
+    } catch (error) {
+      console.error("Error running all evaluations:", error);
+      toast.error("Oops! Something went wrong while running the evaluations.");
+    } finally {
+      setRunningAll(false);
+    }
+  }, [evaluate, evaluations, updateVersion]);
 
   return (
     <>
@@ -281,12 +298,8 @@ export default function Evaluate({
                         <Button
                           size="sm"
                           startContent={<LuPlay />}
-                          onClick={() => handleRunEvaluation(Number(item.key))}
-                          isLoading={runningRowIndex === Number(item.key)}
-                          isDisabled={
-                            runningRowIndex !== null &&
-                            runningRowIndex !== Number(item.key)
-                          }
+                          onClick={() => handleRunSingle(Number(item.key))}
+                          isLoading={runningRowIndexes.has(Number(item.key))}
                         >
                           Run
                         </Button>
@@ -303,7 +316,22 @@ export default function Evaluate({
                           <LuTrash2 />
                         </Button>
                       ) : (
-                        getKeyValue(item, columnKey) || "-"
+                        <>
+                          {columnKey === "response" ? (
+                            <div className="space-y-2">
+                              <Response
+                                type="text"
+                                value={
+                                  item.response as z.infer<
+                                    typeof AssistantMessageSchema
+                                  >
+                                }
+                              />
+                            </div>
+                          ) : (
+                            getKeyValue(item, columnKey)
+                          )}
+                        </>
                       )}
                     </TableCell>
                   )}

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Kbd } from "@nextui-org/react";
+import { Button, Card, CardBody, Chip, Kbd } from "@nextui-org/react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
-import { LuBraces, LuPlay, LuPlus } from "react-icons/lu";
+import { LuBraces, LuCornerUpLeft, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
   SystemMessageSchema,
@@ -198,6 +198,12 @@ export default function Prompt({
         }
       );
 
+      let responseCp: z.infer<typeof AssistantMessageSchema> = {
+        role: "assistant",
+        content: null,
+        tool_calls: null,
+      };
+
       for await (const event of events) {
         if (!event.data) {
           continue;
@@ -254,6 +260,7 @@ export default function Prompt({
             });
           }
 
+          responseCp = prev;
           return prev;
         });
       }
@@ -263,7 +270,7 @@ export default function Prompt({
       // Add to evaluations for this version
       const newEvaluations = addEvaluation(versionEvaluations, {
         variables: Object.fromEntries(variables),
-        response,
+        response: responseCp,
         created_at: new Date().toISOString(),
       });
 
@@ -275,7 +282,7 @@ export default function Prompt({
         .eq("id", version.id)
         .throwOnError();
     },
-    [response]
+    []
   );
 
   const save = useCallback(
@@ -611,18 +618,37 @@ export default function Prompt({
             </div>
           </div>
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
-            <Response
-              type={getValues().response_format.type}
-              value={response}
-              onAddToConversation={() => {
-                addMessage(response);
-                setResponse({
-                  role: "assistant",
-                  content: null,
-                  tool_calls: null,
-                });
-              }}
-            />
+            <Card>
+              <CardBody className="gap-4">
+                <Chip size="sm" variant="flat" color="secondary">
+                  RESPONSE
+                </Chip>
+                <Response
+                  type={getValues().response_format.type}
+                  value={response}
+                />
+              </CardBody>
+            </Card>
+            <div>
+              {((response.content && response.content.length > 0) ||
+                (response.tool_calls && response.tool_calls.length > 0)) && (
+                <Button
+                  size="sm"
+                  variant="flat"
+                  startContent={<LuCornerUpLeft />}
+                  onPress={() => {
+                    addMessage(response);
+                    setResponse({
+                      role: "assistant",
+                      content: null,
+                      tool_calls: null,
+                    });
+                  }}
+                >
+                  Add to conversation
+                </Button>
+              )}
+            </div>
           </div>
           <div className="basis-1/5 w-56 p-3 flex flex-col gap-4">
             <Params control={control} />
