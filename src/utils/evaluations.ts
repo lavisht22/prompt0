@@ -42,7 +42,11 @@ export function copyEvaluations(
           variableKeys.includes(key)
         ),
       ),
-      response: null, // Reset the response
+      response: {
+        role: "assistant" as const,
+        content: null,
+        tool_calls: null,
+      }, // Reset the response
       created_at: new Date().toISOString(), // Set a new creation date
     };
   });

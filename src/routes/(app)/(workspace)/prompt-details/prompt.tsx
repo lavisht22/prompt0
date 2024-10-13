@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Kbd } from "@nextui-org/react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { LuBraces, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
@@ -48,7 +48,7 @@ const FormSchema = z.object({
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),
   }),
-  tools: z.array(ToolSchema).max(128).optional(),
+  tools: z.array(ToolSchema).min(1).optional(),
   tool_choice: z
     .union([
       z.literal("none"),
@@ -125,7 +125,7 @@ export default function Prompt({
     return (activeVersion?.evaluations as unknown as Evaluation[]) || [];
   }, [activeVersion]);
 
-  const { handleSubmit, control, reset, formState, getValues } =
+  const { handleSubmit, control, reset, formState, getValues, setValue } =
     useForm<FormValues>({
       resolver: zodResolver(FormSchema),
       defaultValues: {
@@ -134,6 +134,19 @@ export default function Prompt({
         ...(activeVersion?.params as object),
       } as FormValues,
     });
+
+  // Add this useWatch hook to listen for changes in the tools array
+  const toolsWatch = useWatch({
+    control,
+    name: "tools",
+  });
+
+  // Add this useEffect to set tools to undefined when its length becomes 0
+  useEffect(() => {
+    if (toolsWatch && toolsWatch.length === 0) {
+      setValue("tools", undefined);
+    }
+  }, [toolsWatch, setValue]);
 
   useEffect(() => {
     setDirty(formState.isDirty);
@@ -352,7 +365,8 @@ export default function Prompt({
               number,
               params: {
                 messages: values.messages,
-                tools: values.tools,
+                tools:
+                  values.tools && values.tools.length > 0 ? values.tools : null,
                 model: values.model,
                 max_tokens: values.max_tokens,
                 temperature: values.temperature,
@@ -439,38 +453,12 @@ export default function Prompt({
 
   return (
     <>
-      <form className="flex-1 overflow-hidden" onSubmit={handleSubmit(save)}>
+      <form
+        className="flex-1 overflow-hidden"
+        onSubmit={handleSubmit(save, console.error)}
+      >
         <div className="flex h-full overflow-hidden">
           <div className="basis-2/5 h-full overflow-y-auto border-r space-y-4">
-            <div className="flex gap-2 sticky top-0 bg-background z-10 p-4 border-b">
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
-                onPress={() =>
-                  addMessage({
-                    role: "user",
-                    content: [{ type: "text", text: "" }],
-                  })
-                }
-              >
-                User
-              </Button>
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
-                onPress={() =>
-                  addMessage({
-                    role: "assistant",
-                    content: "",
-                  })
-                }
-              >
-                Assistant
-              </Button>
-            </div>
-
             <div className="p-4 flex flex-col gap-4">
               <ToolDialog
                 isOpen={addToolOpen}
@@ -592,6 +580,35 @@ export default function Prompt({
                 return null;
               })}
             </div>
+
+            <div className="flex gap-2 sticky bottom-0 bg-background z-10 p-4 border-t">
+              <Button
+                variant="flat"
+                size="sm"
+                startContent={<LuPlus />}
+                onPress={() =>
+                  addMessage({
+                    role: "user",
+                    content: [{ type: "text", text: "" }],
+                  })
+                }
+              >
+                User
+              </Button>
+              <Button
+                variant="flat"
+                size="sm"
+                startContent={<LuPlus />}
+                onPress={() =>
+                  addMessage({
+                    role: "assistant",
+                    content: "",
+                  })
+                }
+              >
+                Assistant
+              </Button>
+            </div>
           </div>
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
             <Response
@@ -633,7 +650,7 @@ export default function Prompt({
         <Button
           className="mx-2"
           isDisabled={saving}
-          onPress={() => handleSubmit(save)()}
+          onPress={() => handleSubmit(save, console.error)()}
           size="sm"
           color="primary"
           startContent={<LuPlay />}
