@@ -1,9 +1,9 @@
-import { Button } from "@nextui-org/react";
+import { Button, cn } from "@nextui-org/react";
 import { formatDistanceToNow } from "date-fns";
 import { useMemo, useState } from "react";
 import { BiCollapseVertical, BiExpandVertical } from "react-icons/bi";
 import { Json } from "supabase/functions/types";
-import ReactJson from "react-json-view";
+import Editor from "@monaco-editor/react";
 
 export type LogT = {
   id: string;
@@ -33,7 +33,12 @@ export default function Log({ log }: { log: LogT }) {
   );
 
   return (
-    <div className="w-full border-b">
+    <div
+      className={cn(
+        "w-full border-b h-[72px] transition-all",
+        expanded && "h-[573px]"
+      )}
+    >
       <div
         key={log.id}
         className="w-full flex flex-row justify-between items-center px-4 py-4"
@@ -71,8 +76,17 @@ export default function Log({ log }: { log: LogT }) {
         </span>
       </div>
       {expanded && (
-        <div className="w-full px-4 py-4 bg-default-50 border-t">
-          <ReactJson src={display} />
+        <div className="w-full bg-default-50">
+          <Editor
+            height="500px"
+            language="json"
+            value={JSON.stringify(display, null, 2)}
+            options={{
+              readOnly: true,
+              minimap: { enabled: false },
+              wordWrap: "on",
+            }}
+          />
         </div>
       )}
     </div>
