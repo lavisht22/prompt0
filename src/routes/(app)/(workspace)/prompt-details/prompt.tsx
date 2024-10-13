@@ -29,12 +29,23 @@ import History from "./components/history";
 import { Version } from "./page";
 import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
+// import Tools from "./components/tools";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
   UserMessageSchema,
   AssistantMessageSchema,
 ]);
+
+const ToolSchema = z.object({
+  type: z.literal("function"),
+  function: z.object({
+    description: z.string().optional(),
+    name: z.string().max(64),
+    parameters: z.object({}).optional(),
+    strict: z.boolean().optional().default(false),
+  }),
+});
 
 const FormSchema = z.object({
   messages: z.array(MessageSchema),
@@ -45,6 +56,19 @@ const FormSchema = z.object({
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),
   }),
+  tools: z.array(ToolSchema).max(128).optional(),
+  tool_choice: z
+    .union([
+      z.literal("none"),
+      z.literal("auto"),
+      z.literal("required"),
+      z.object({
+        type: z.literal("function"),
+        function: z.object({ name: z.string() }),
+      }),
+    ])
+    .optional(),
+  parallel_tool_calls: z.boolean().optional().default(true),
 });
 
 export type FormValues = z.infer<typeof FormSchema>;
@@ -63,6 +87,9 @@ const defaultValues: FormValues = {
   response_format: {
     type: "text",
   },
+  tools: [],
+  tool_choice: "auto",
+  parallel_tool_calls: true,
 };
 
 export default function Prompt({
@@ -345,6 +372,15 @@ export default function Prompt({
     control,
   });
 
+  const {
+    fields: tools,
+    append: addTool,
+    remove: removeTool,
+  } = useFieldArray({
+    name: "tools",
+    control,
+  });
+
   if (!promptId) {
     // TODO: Redirect to the prompts page
     return null;
@@ -354,76 +390,10 @@ export default function Prompt({
     <>
       <form className="flex-1 overflow-hidden" onSubmit={handleSubmit(save)}>
         <div className="flex h-full overflow-hidden">
-          <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
-            {messages.map((field, index) => {
-              if (field.role === "system") {
-                return (
-                  <Controller
-                    key={index}
-                    name={`messages.${index}`}
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <SystemMessage
-                        value={
-                          field.value as z.infer<typeof SystemMessageSchema>
-                        }
-                        onValueChange={field.onChange}
-                        isInvalid={fieldState.invalid}
-                        variableValues={variableValues}
-                        openVariablesDialog={openVariablesDialog}
-                      />
-                    )}
-                  />
-                );
-              }
-
-              if (field.role === "user") {
-                return (
-                  <Controller
-                    key={index}
-                    name={`messages.${index}`}
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <UserMessage
-                        value={field.value as z.infer<typeof UserMessageSchema>}
-                        onValueChange={field.onChange}
-                        isInvalid={fieldState.invalid}
-                        onRemove={() => removeMessage(index)}
-                        variableValues={variableValues}
-                        openVariablesDialog={openVariablesDialog}
-                      />
-                    )}
-                  />
-                );
-              }
-
-              if (field.role === "assistant") {
-                return (
-                  <Controller
-                    key={index}
-                    name={`messages.${index}`}
-                    control={control}
-                    render={({ field, fieldState }) => (
-                      <AssistantMessage
-                        value={
-                          field.value as z.infer<typeof AssistantMessageSchema>
-                        }
-                        onValueChange={field.onChange}
-                        isInvalid={fieldState.invalid}
-                        onRemove={() => removeMessage(index)}
-                        variableValues={variableValues}
-                        openVariablesDialog={openVariablesDialog}
-                      />
-                    )}
-                  />
-                );
-              }
-
-              return null;
-            })}
-            <div className="flex">
+          <div className="basis-2/5 h-full overflow-y-auto border-r space-y-4">
+            <div className="flex gap-2 sticky top-0 bg-background z-10 p-4 border-b">
               <Button
-                variant="light"
+                variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
@@ -436,7 +406,7 @@ export default function Prompt({
                 User
               </Button>
               <Button
-                variant="light"
+                variant="flat"
                 size="sm"
                 startContent={<LuPlus />}
                 onPress={() =>
@@ -448,6 +418,79 @@ export default function Prompt({
               >
                 Assistant
               </Button>
+            </div>
+
+            <div className="p-4 flex flex-col gap-4">
+              {messages.map((field, index) => {
+                if (field.role === "system") {
+                  return (
+                    <Controller
+                      key={index}
+                      name={`messages.${index}`}
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <SystemMessage
+                          value={
+                            field.value as z.infer<typeof SystemMessageSchema>
+                          }
+                          onValueChange={field.onChange}
+                          isInvalid={fieldState.invalid}
+                          variableValues={variableValues}
+                          openVariablesDialog={openVariablesDialog}
+                        />
+                      )}
+                    />
+                  );
+                }
+
+                if (field.role === "user") {
+                  return (
+                    <Controller
+                      key={index}
+                      name={`messages.${index}`}
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <UserMessage
+                          value={
+                            field.value as z.infer<typeof UserMessageSchema>
+                          }
+                          onValueChange={field.onChange}
+                          isInvalid={fieldState.invalid}
+                          onRemove={() => removeMessage(index)}
+                          variableValues={variableValues}
+                          openVariablesDialog={openVariablesDialog}
+                        />
+                      )}
+                    />
+                  );
+                }
+
+                if (field.role === "assistant") {
+                  return (
+                    <Controller
+                      key={index}
+                      name={`messages.${index}`}
+                      control={control}
+                      render={({ field, fieldState }) => (
+                        <AssistantMessage
+                          value={
+                            field.value as z.infer<
+                              typeof AssistantMessageSchema
+                            >
+                          }
+                          onValueChange={field.onChange}
+                          isInvalid={fieldState.invalid}
+                          onRemove={() => removeMessage(index)}
+                          variableValues={variableValues}
+                          openVariablesDialog={openVariablesDialog}
+                        />
+                      )}
+                    />
+                  );
+                }
+
+                return null;
+              })}
             </div>
           </div>
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
