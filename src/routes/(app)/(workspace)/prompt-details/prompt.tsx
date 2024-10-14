@@ -85,7 +85,7 @@ const defaultValues: FormValues = {
   response_format: {
     type: "text",
   },
-  tools: [],
+  tools: undefined,
   tool_choice: "auto",
   parallel_tool_calls: true,
 };
