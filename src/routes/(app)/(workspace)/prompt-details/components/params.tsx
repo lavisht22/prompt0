@@ -1,9 +1,11 @@
-import { Input, Select, SelectItem, Slider } from "@nextui-org/react";
+import { Input, Select, SelectItem, Slider, Switch } from "@nextui-org/react";
 import { useEffect, useState } from "react";
-import { Control, Controller } from "react-hook-form";
+import { Controller, useWatch, useFormContext } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
 import { FormValues } from "../prompt";
 import supabase from "utils/supabase";
+import { LuFunctionSquare } from "react-icons/lu";
+import { CollectionElement } from "@react-types/shared";
 
 type Provider = {
   id: string;
@@ -11,9 +13,11 @@ type Provider = {
   name: string;
 };
 
-export default function Params({ control }: { control: Control<FormValues> }) {
+export default function Params() {
   const { activeWorkspace } = useWorkspacesStore();
   const [providers, setProviders] = useState<Provider[]>([]);
+
+  const { setValue, control, getValues } = useFormContext<FormValues>();
 
   useEffect(() => {
     const init = async () => {
@@ -35,6 +39,28 @@ export default function Params({ control }: { control: Control<FormValues> }) {
 
     init();
   }, [activeWorkspace]);
+
+  const tools = useWatch({
+    control,
+    name: "tools",
+  });
+
+  useEffect(() => {
+    if (!tools || tools.length === 0) {
+      setValue("parallel_tool_calls", undefined);
+      setValue("tool_choice", undefined);
+    }
+
+    const values = getValues();
+
+    if (tools && tools.length > 0 && values.parallel_tool_calls === undefined) {
+      setValue("parallel_tool_calls", false);
+    }
+
+    if (tools && tools.length > 0 && values.tool_choice === undefined) {
+      setValue("tool_choice", "auto");
+    }
+  }, [tools, setValue, getValues]);
 
   return (
     <>
@@ -139,6 +165,98 @@ export default function Params({ control }: { control: Control<FormValues> }) {
           />
         )}
       />
+
+      {tools && tools.length > 0 ? (
+        <>
+          <Controller
+            name="tool_choice"
+            control={control}
+            render={({ field, fieldState }) => {
+              let selectedKeys: Set<string> | undefined = undefined;
+
+              if (field.value === "none") {
+                selectedKeys = new Set(["none"]);
+              } else if (field.value === "auto") {
+                selectedKeys = new Set(["auto"]);
+              } else if (field.value === "required") {
+                selectedKeys = new Set(["required"]);
+              } else if (field.value) {
+                selectedKeys = new Set([field.value.function.name]);
+              } else {
+                selectedKeys = undefined;
+              }
+
+              return (
+                <Select
+                  variant="bordered"
+                  size="sm"
+                  label="Tool Choice"
+                  isInvalid={fieldState.invalid}
+                  selectedKeys={selectedKeys}
+                  onSelectionChange={(selectedKeys) => {
+                    const value = Array.from(selectedKeys)[0] as string;
+
+                    if (["none", "auto", "required"].includes(value)) {
+                      field.onChange(value);
+                    } else {
+                      const tool = tools.find(
+                        (tool) => tool.function.name === value
+                      );
+
+                      if (tool) {
+                        console.log("TOOL AVAILABLE");
+                        field.onChange({
+                          type: "function",
+                          function: {
+                            name: tool.function.name,
+                          },
+                        });
+                      }
+                    }
+                  }}
+                >
+                  <SelectItem key="none" value="none">
+                    none
+                  </SelectItem>
+                  <SelectItem key="auto" value="auto">
+                    auto
+                  </SelectItem>
+                  <SelectItem key="required" value="required">
+                    required
+                  </SelectItem>
+                  {
+                    tools.map((tool) => (
+                      <SelectItem
+                        key={tool.function.name}
+                        value={tool.function.name}
+                        startContent={<LuFunctionSquare />}
+                      >
+                        {tool.function.name}
+                      </SelectItem>
+                    )) as unknown as CollectionElement<object>
+                  }
+                </Select>
+              );
+            }}
+          />
+
+          <Controller
+            name="parallel_tool_calls"
+            control={control}
+            render={({ field }) => (
+              <div className="flex items-center justify-between gap-2">
+                <span className="block text-sm">Parallel Tool Calls</span>
+                <Switch
+                  aria-label="Parallel Tool Calls"
+                  size="sm"
+                  isSelected={field.value}
+                  onValueChange={field.onChange}
+                />
+              </div>
+            )}
+          />
+        </>
+      ) : null}
     </>
   );
 }

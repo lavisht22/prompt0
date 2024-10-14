@@ -1,6 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, CardBody, Chip, Kbd } from "@nextui-org/react";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useFieldArray,
+  useForm,
+  useWatch,
+} from "react-hook-form";
 import { LuBraces, LuCornerUpLeft, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
@@ -60,7 +66,7 @@ const FormSchema = z.object({
       }),
     ])
     .optional(),
-  parallel_tool_calls: z.boolean().optional().default(true),
+  parallel_tool_calls: z.boolean().default(false).optional(),
 });
 
 export type FormValues = z.infer<typeof FormSchema>;
@@ -125,44 +131,43 @@ export default function Prompt({
     return (activeVersion?.evaluations as unknown as Evaluation[]) || [];
   }, [activeVersion]);
 
-  const { handleSubmit, control, reset, formState, getValues, setValue } =
-    useForm<FormValues>({
-      resolver: zodResolver(FormSchema),
-      defaultValues: {
-        ...defaultValues,
-        provider_id: activeVersion?.provider_id || "",
-        ...(activeVersion?.params as object),
-      } as FormValues,
-    });
+  const methods = useForm<FormValues>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      ...defaultValues,
+      provider_id: activeVersion?.provider_id || "",
+      ...(activeVersion?.params as object),
+    } as FormValues,
+  });
 
   // Add this useWatch hook to listen for changes in the tools array
   const toolsWatch = useWatch({
-    control,
+    control: methods.control,
     name: "tools",
   });
 
   // Add this useEffect to set tools to undefined when its length becomes 0
   useEffect(() => {
     if (toolsWatch && toolsWatch.length === 0) {
-      setValue("tools", undefined);
+      methods.setValue("tools", undefined);
     }
-  }, [toolsWatch, setValue]);
+  }, [toolsWatch, methods]);
 
   useEffect(() => {
-    setDirty(formState.isDirty);
-  }, [formState.isDirty, setDirty]);
+    setDirty(methods.formState.isDirty);
+  }, [methods.formState.isDirty, setDirty]);
 
   useEffect(() => {
     if (activeVersion !== null) {
       const params = activeVersion.params as object;
 
-      reset({
+      methods.reset({
         provider_id: activeVersion.provider_id,
 
         ...params,
       } as FormValues);
     }
-  }, [activeVersion, reset]);
+  }, [activeVersion, methods]);
 
   useEffect(() => {
     const lastEvaluation = evaluations[evaluations.length - 1];
@@ -315,7 +320,7 @@ export default function Prompt({
         let promptIdToBeUsed: string = promptId;
         let evaluationsToAdd: Evaluation[] = evaluations;
 
-        if (formState.isDirty) {
+        if (methods.formState.isDirty) {
           if (promptId === "create") {
             let nameToBeUsed = name;
 
@@ -374,6 +379,8 @@ export default function Prompt({
                 messages: values.messages,
                 tools:
                   values.tools && values.tools.length > 0 ? values.tools : null,
+                tool_choice: values.tool_choice,
+                parallel_tool_calls: values.parallel_tool_calls,
                 model: values.model,
                 max_tokens: values.max_tokens,
                 temperature: values.temperature,
@@ -392,7 +399,7 @@ export default function Prompt({
           setVersions([data, ...versions]);
           setActiveVersionId(data.id);
 
-          reset(values);
+          methods.reset(values);
 
           if (promptId === "create") {
             navigate(`/${activeWorkspace.slug}/prompts/${version.prompt_id}`);
@@ -413,19 +420,18 @@ export default function Prompt({
       }
     },
     [
-      activeVersion,
-      activeWorkspace,
-      evaluations,
-      formState.isDirty,
-      generate,
-      name,
-      navigate,
       promptId,
-      reset,
-      setActiveVersionId,
-      setVersions,
+      activeWorkspace,
+      activeVersion,
+      evaluations,
+      methods,
       variableValues,
       versions,
+      setVersions,
+      setActiveVersionId,
+      name,
+      navigate,
+      generate,
     ]
   );
 
@@ -433,7 +439,7 @@ export default function Prompt({
     setVariablesOpen(true);
   }, []);
 
-  useHotkeys("mod+enter", () => handleSubmit(save)(), [save]);
+  useHotkeys("mod+enter", () => methods.handleSubmit(save)(), [save]);
 
   const {
     fields: messages,
@@ -441,7 +447,7 @@ export default function Prompt({
     remove: removeMessage,
   } = useFieldArray({
     name: "messages",
-    control,
+    control: methods.control,
   });
 
   const {
@@ -450,7 +456,7 @@ export default function Prompt({
     remove: removeTool,
   } = useFieldArray({
     name: "tools",
-    control,
+    control: methods.control,
   });
 
   if (!promptId) {
@@ -459,10 +465,10 @@ export default function Prompt({
   }
 
   return (
-    <>
+    <FormProvider {...methods}>
       <form
         className="flex-1 overflow-hidden"
-        onSubmit={handleSubmit(save, console.error)}
+        onSubmit={methods.handleSubmit(save, console.error)}
       >
         <div className="flex h-full overflow-hidden">
           <div className="basis-2/5 h-full overflow-y-auto border-r space-y-4">
@@ -495,7 +501,7 @@ export default function Prompt({
                 <Controller
                   key={index}
                   name={`tools.${index}`}
-                  control={control}
+                  control={methods.control}
                   render={({ field, fieldState }) => (
                     <Tool
                       value={field.value as z.infer<typeof ToolSchema>}
@@ -522,7 +528,7 @@ export default function Prompt({
                     <Controller
                       key={index}
                       name={`messages.${index}`}
-                      control={control}
+                      control={methods.control}
                       render={({ field, fieldState }) => (
                         <SystemMessage
                           value={
@@ -543,7 +549,7 @@ export default function Prompt({
                     <Controller
                       key={index}
                       name={`messages.${index}`}
-                      control={control}
+                      control={methods.control}
                       render={({ field, fieldState }) => (
                         <UserMessage
                           value={
@@ -565,7 +571,7 @@ export default function Prompt({
                     <Controller
                       key={index}
                       name={`messages.${index}`}
-                      control={control}
+                      control={methods.control}
                       render={({ field, fieldState }) => (
                         <AssistantMessage
                           value={
@@ -624,7 +630,7 @@ export default function Prompt({
                   RESPONSE
                 </Chip>
                 <Response
-                  type={getValues().response_format.type}
+                  type={methods.getValues().response_format.type}
                   value={response}
                 />
               </CardBody>
@@ -651,17 +657,17 @@ export default function Prompt({
             </div>
           </div>
           <div className="basis-1/5 w-56 p-3 flex flex-col gap-4">
-            <Params control={control} />
+            <Params />
           </div>
         </div>
       </form>
       <VariablesDialog
         isOpen={variablesOpen}
         onOpenChange={setVariablesOpen}
-        getFormValues={getValues}
+        getFormValues={methods.getValues}
         values={variableValues}
         setValues={setVariableValues}
-        onRun={() => handleSubmit(save)()}
+        onRun={() => methods.handleSubmit(save)()}
       />
       <div className="flex items-center absolute right-3 top-0 h-12">
         <History versions={versions} setActiveVersionId={setActiveVersionId} />
@@ -676,7 +682,7 @@ export default function Prompt({
         <Button
           className="mx-2"
           isDisabled={saving}
-          onPress={() => handleSubmit(save, console.error)()}
+          onPress={() => methods.handleSubmit(save, console.error)()}
           size="sm"
           color="primary"
           startContent={<LuPlay />}
@@ -690,12 +696,12 @@ export default function Prompt({
           Run
         </Button>
         <Deploy
-          isDirty={formState.isDirty}
+          isDirty={methods.formState.isDirty}
           activeVersionId={activeVersionId}
           versions={versions}
           setVersions={setVersions}
         />
       </div>
-    </>
+    </FormProvider>
   );
 }
