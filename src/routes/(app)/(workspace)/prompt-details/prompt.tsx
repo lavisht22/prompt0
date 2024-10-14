@@ -5,7 +5,6 @@ import {
   FormProvider,
   useFieldArray,
   useForm,
-  useWatch,
 } from "react-hook-form";
 import { LuBraces, LuCornerUpLeft, LuPlay, LuPlus } from "react-icons/lu";
 import { z } from "zod";
@@ -35,9 +34,9 @@ import History from "./components/history";
 import { Version } from "./page";
 import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
-import Tool, { ToolSchema } from "./components/tool";
-import { ToolDialog } from "./components/tool-dialog";
+import { ToolSchema } from "./components/tool";
 import { Evaluation } from "./types";
+import Tools from "./components/tools";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -54,7 +53,7 @@ const FormSchema = z.object({
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),
   }),
-  tools: z.array(ToolSchema).min(1).optional(),
+  tools: z.union([z.array(ToolSchema).min(1), z.undefined()]),
   tool_choice: z
     .union([
       z.literal("none"),
@@ -118,7 +117,6 @@ export default function Prompt({
     tool_calls: null,
   });
   const [variablesOpen, setVariablesOpen] = useState(false);
-  const [addToolOpen, setAddToolOpen] = useState(false);
   const [variableValues, setVariableValues] = useState<Map<string, string>>(
     new Map()
   );
@@ -139,19 +137,6 @@ export default function Prompt({
       ...(activeVersion?.params as object),
     } as FormValues,
   });
-
-  // Add this useWatch hook to listen for changes in the tools array
-  const toolsWatch = useWatch({
-    control: methods.control,
-    name: "tools",
-  });
-
-  // Add this useEffect to set tools to undefined when its length becomes 0
-  useEffect(() => {
-    if (toolsWatch && toolsWatch.length === 0) {
-      methods.setValue("tools", undefined);
-    }
-  }, [toolsWatch, methods]);
 
   useEffect(() => {
     setDirty(methods.formState.isDirty);
@@ -378,7 +363,9 @@ export default function Prompt({
               params: {
                 messages: values.messages,
                 tools:
-                  values.tools && values.tools.length > 0 ? values.tools : null,
+                  values.tools && values.tools.length > 0
+                    ? values.tools
+                    : undefined,
                 tool_choice: values.tool_choice,
                 parallel_tool_calls: values.parallel_tool_calls,
                 model: values.model,
@@ -450,15 +437,6 @@ export default function Prompt({
     control: methods.control,
   });
 
-  const {
-    fields: tools,
-    append: addTool,
-    remove: removeTool,
-  } = useFieldArray({
-    name: "tools",
-    control: methods.control,
-  });
-
   if (!promptId) {
     // TODO: Redirect to the prompts page
     return null;
@@ -473,54 +451,7 @@ export default function Prompt({
         <div className="flex h-full overflow-hidden">
           <div className="basis-2/5 h-full overflow-y-auto border-r space-y-4">
             <div className="p-4 flex flex-col gap-4">
-              <ToolDialog
-                isOpen={addToolOpen}
-                onOpenChange={setAddToolOpen}
-                value={{
-                  type: "function",
-                  function: {
-                    name: "function_name",
-                    description: "description of the function",
-                    strict: true,
-                    parameters: {
-                      type: "object",
-                      properties: {
-                        property_name: {
-                          type: "string",
-                          description: "description of this property",
-                        },
-                      },
-                      additionalProperties: false,
-                      required: [],
-                    },
-                  },
-                }}
-                onValueChange={(value) => addTool(value)}
-              />
-              {tools.map((_, index) => (
-                <Controller
-                  key={index}
-                  name={`tools.${index}`}
-                  control={methods.control}
-                  render={({ field, fieldState }) => (
-                    <Tool
-                      value={field.value as z.infer<typeof ToolSchema>}
-                      onValueChange={field.onChange}
-                      isInvalid={fieldState.invalid}
-                      onRemove={() => removeTool(index)}
-                    />
-                  )}
-                />
-              ))}
-
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
-                onPress={() => setAddToolOpen(true)}
-              >
-                Add Tool
-              </Button>
+              <Tools />
 
               {messages.map((field, index) => {
                 if (field.role === "system") {
