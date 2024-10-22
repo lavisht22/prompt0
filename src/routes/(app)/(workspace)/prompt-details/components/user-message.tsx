@@ -59,7 +59,10 @@ export default function UserMessage({
           {value.content.map((part, index) => {
             if (part.type === "text") {
               return (
-                <div key={index} className="py-4 border-b-2 border-dashed">
+                <div
+                  key={index}
+                  className="py-4 border-b-2 border-dashed flex flex-col gap-2"
+                >
                   <Textarea
                     aria-label="User message"
                     variant="bordered"
@@ -135,6 +138,11 @@ export default function UserMessage({
                     <Radio value="low">Low</Radio>
                     <Radio value="high">High</Radio>
                   </RadioGroup>
+                  <VariablesList
+                    text={part.image_url.url}
+                    variableValues={variableValues}
+                    openVariablesDialog={openVariablesDialog}
+                  />
                 </div>
               );
             }
