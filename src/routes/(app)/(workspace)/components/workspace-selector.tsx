@@ -13,7 +13,11 @@ import { LuChevronDown, LuPlus } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
 import useWorkspacesStore from "stores/workspaces";
 
-export default function WorkspaceSelector() {
+export default function WorkspaceSelector({
+  collapsed,
+}: {
+  collapsed: boolean;
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isOpen, onOpenChange, onClose } = useDisclosure();
@@ -28,26 +32,47 @@ export default function WorkspaceSelector() {
       onOpenChange={onOpenChange}
     >
       <PopoverTrigger>
-        <Button
-          className="justify-start px-0"
-          variant="light"
-          disableRipple
-          startContent={
-            <Avatar
-              className="ml-1"
-              size="sm"
-              radius="sm"
-              fallback={
-                <span className="text-base font-bold text-default-600">
-                  {activeWorkspace?.name?.[0]}
-                </span>
-              }
-            />
-          }
-          endContent={<LuChevronDown className="mr-2" />}
-        >
-          {activeWorkspace?.name}
-        </Button>
+        {collapsed ? (
+          <Button
+            isIconOnly
+            className="justify-start px-0"
+            variant="light"
+            disableRipple
+            startContent={
+              <Avatar
+                className="ml-1"
+                size="sm"
+                radius="sm"
+                fallback={
+                  <span className="text-base font-bold text-default-600">
+                    {activeWorkspace?.name?.[0]}
+                  </span>
+                }
+              />
+            }
+          />
+        ) : (
+          <Button
+            className="justify-start px-0 animate-appearance-in delay-300"
+            variant="light"
+            disableRipple
+            startContent={
+              <Avatar
+                className="ml-1"
+                size="sm"
+                radius="sm"
+                fallback={
+                  <span className="text-base font-bold text-default-600">
+                    {activeWorkspace?.name?.[0]}
+                  </span>
+                }
+              />
+            }
+            endContent={<LuChevronDown className="mr-2" />}
+          >
+            {activeWorkspace?.name}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="flex flex-col items-start p-0 min-w-80 overflow-hidden">
         <div className="border-b p-2 px-4 w-full">

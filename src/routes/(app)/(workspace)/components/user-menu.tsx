@@ -10,7 +10,7 @@ import { useCallback } from "react";
 import { LuChevronRight, LuLogOut, LuSettings2, LuUser } from "react-icons/lu";
 import supabase from "utils/supabase";
 
-export default function UserMenu() {
+export default function UserMenu({ collapsed }: { collapsed: boolean }) {
   const { user } = useAuth();
 
   const logout = useCallback(async () => {
@@ -20,23 +20,39 @@ export default function UserMenu() {
   return (
     <Popover backdrop="blur" placement="right-end">
       <PopoverTrigger>
-        <Button
-          variant="light"
-          startContent={
-            <Avatar
-              size="sm"
-              className="ml-1"
-              fallback={<LuUser className="w-4 h-4" />}
-            />
-          }
-          endContent={<LuChevronRight className="mr-2" />}
-          fullWidth
-          className="justify-start  px-0"
-        >
-          <span className="block flex-1 text-left">
-            {user?.user_metadata.name}
-          </span>
-        </Button>
+        {collapsed ? (
+          <Button
+            radius="full"
+            isIconOnly
+            variant="light"
+            startContent={
+              <Avatar
+                size="sm"
+                className="ml-1"
+                fallback={<LuUser className="w-4 h-4" />}
+              />
+            }
+            className="justify-start  px-0"
+          />
+        ) : (
+          <Button
+            variant="light"
+            startContent={
+              <Avatar
+                size="sm"
+                className="ml-1"
+                fallback={<LuUser className="w-4 h-4" />}
+              />
+            }
+            endContent={<LuChevronRight className="mr-2" />}
+            fullWidth
+            className="justify-start  px-0"
+          >
+            <span className="block flex-1 text-left">
+              {user?.user_metadata.name}
+            </span>
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent className="min-w-64 flex flex-col justify-start items-start p-0">
         <div className="border-b p-2 mt-1 space-y-2 w-full">
