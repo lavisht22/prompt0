@@ -7,6 +7,7 @@ import usePromptsStore from "stores/prompts";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import EmptyList from "components/empty-list";
+import { formatDistanceToNow } from "date-fns";
 
 export default function PromptsPage() {
   const { activeWorkspace } = useWorkspacesStore();
@@ -90,7 +91,9 @@ export default function PromptsPage() {
                 <h4 className="text-sm">{prompt.name}</h4>
               </div>
               <div>
-                <span className="block text-xs text-default-500">Aug 10</span>
+                <span className="block text-xs text-default-500">
+                  {formatDistanceToNow(new Date(prompt.updated_at))}
+                </span>
               </div>
             </Link>
           ))}
