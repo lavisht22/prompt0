@@ -114,6 +114,8 @@ export default function PromptDetailsPage() {
       </div>
       {activeTab === "prompt" && (
         <Prompt
+          name={name}
+          setName={setName}
           versions={versions}
           activeVersionId={activeVersionId}
           setVersions={setVersions}

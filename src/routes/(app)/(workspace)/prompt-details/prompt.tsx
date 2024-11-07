@@ -90,12 +90,16 @@ const defaultValues: FormValues = {
 };
 
 export default function Prompt({
+  name,
+  setName,
   versions,
   activeVersionId,
   setVersions,
   setActiveVersionId,
   setDirty,
 }: {
+  name: string;
+  setName: (name: string) => void;
   versions: Version[];
   activeVersionId: string | null;
   setVersions: (versions: Version[]) => void;
@@ -107,8 +111,6 @@ export default function Prompt({
   const { activeWorkspace } = useWorkspacesStore();
 
   const [saving, setSaving] = useState(false);
-
-  const [name, setName] = useState("");
   const [response, setResponse] = useState<
     z.infer<typeof AssistantMessageSchema>
   >({
@@ -401,6 +403,7 @@ export default function Prompt({
       setVersions,
       setActiveVersionId,
       name,
+      setName,
       navigate,
       generate,
     ]
