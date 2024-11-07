@@ -35,7 +35,7 @@ import { Version } from "./page";
 import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
 import { ToolSchema } from "./components/tool";
-import { Evaluation } from "./types";
+import { Evaluation, ResponseDelta } from "./types";
 import Tools from "./components/tools";
 
 const MessageSchema = z.union([
@@ -188,7 +188,7 @@ export default function Prompt({
         }
       );
 
-      let responseCp: z.infer<typeof AssistantMessageSchema> = {
+      const responseCp: z.infer<typeof AssistantMessageSchema> = {
         role: "assistant",
         content: null,
         tool_calls: null,
@@ -199,60 +199,44 @@ export default function Prompt({
           continue;
         }
 
-        const data = JSON.parse(event.data) as {
-          delta: {
-            content: string | null;
-            tool_calls: {
-              index: number;
-              id?: string;
-              type?: "function";
-              function: {
-                name?: string;
-                arguments: string;
-              };
-            }[];
-          };
-        };
+        const data = JSON.parse(event.data) as ResponseDelta;
 
-        setResponse((prev) => {
-          if (data.delta.content) {
-            if (!prev.content) {
-              prev.content = "";
-            }
-
-            prev.content += data.delta.content;
+        if (data.delta.content) {
+          if (!responseCp.content) {
+            responseCp.content = "";
           }
 
-          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
-            if (!prev.tool_calls) {
-              prev.tool_calls = [];
-            }
+          responseCp.content += data.delta.content;
+        }
 
-            data.delta.tool_calls.forEach((tc) => {
-              const prevIndex = prev.tool_calls?.findIndex(
-                (t) => t.index === tc.index
-              );
-
-              if (prevIndex === -1 || prevIndex === undefined) {
-                prev.tool_calls?.push({
-                  index: tc.index,
-                  id: tc.id ?? "",
-                  type: tc.type ?? "function",
-                  function: {
-                    name: tc.function.name ?? "",
-                    arguments: tc.function.arguments,
-                  },
-                });
-              } else {
-                prev.tool_calls![prevIndex].function.arguments +=
-                  tc.function.arguments;
-              }
-            });
+        if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+          if (!responseCp.tool_calls) {
+            responseCp.tool_calls = [];
           }
 
-          responseCp = prev;
-          return prev;
-        });
+          data.delta.tool_calls.forEach((tc) => {
+            const prevIndex = responseCp.tool_calls?.findIndex(
+              (t) => t.index === tc.index
+            );
+
+            if (prevIndex === -1 || prevIndex === undefined) {
+              responseCp.tool_calls?.push({
+                index: tc.index,
+                id: tc.id ?? "",
+                type: tc.type ?? "function",
+                function: {
+                  name: tc.function.name ?? "",
+                  arguments: tc.function.arguments,
+                },
+              });
+            } else {
+              responseCp.tool_calls![prevIndex].function.arguments +=
+                tc.function.arguments;
+            }
+          });
+        }
+
+        setResponse({ ...responseCp });
       }
 
       const versionEvaluations = version.evaluations as unknown as Evaluation[];

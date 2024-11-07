@@ -40,30 +40,50 @@ export function applyVariables(
         (message.content as OpenAI.Chat.ChatCompletionContentPart[])
           .map((part) => {
             if (part.type === "text") {
-              return {
+              return [{
                 ...part,
                 text: replaceVariablesInText(
                   part.text,
                   variables,
                 ),
-              };
+              }];
             }
 
             if (part.type === "image_url") {
-              return {
+              const replacedUrl = replaceVariablesInText(
+                part.image_url.url,
+                variables,
+              );
+
+              try {
+                const parsedUrls = JSON.parse(replacedUrl);
+                if (
+                  Array.isArray(parsedUrls) &&
+                  parsedUrls.every((url) => typeof url === "string")
+                ) {
+                  return parsedUrls.map((url) => ({
+                    type: "image_url" as const,
+                    image_url: {
+                      ...part.image_url,
+                      url,
+                    },
+                  }));
+                }
+              } catch {
+                // If parsing fails, it's not a valid JSON string, so we'll use it as is
+              }
+
+              return [{
                 ...part,
                 image_url: {
                   ...part.image_url,
-                  url: replaceVariablesInText(
-                    part.image_url.url,
-                    variables,
-                  ),
+                  url: replacedUrl,
                 },
-              };
+              }];
             }
 
-            return part;
-          });
+            return [part];
+          }).flat();
 
       return {
         ...message,
