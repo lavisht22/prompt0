@@ -1,4 +1,4 @@
-import { FormValues } from "routes/$worskpaceSlug.prompts/prompt-details/prompt";
+import { FormValues } from "routes/$worskpaceSlug.prompts.$id/prompt";
 
 // Function to extract {{VARIABLES}} from a string
 export function extractVariables(string: string): string[] {
