@@ -64,6 +64,7 @@ export default function LoginEmailPage() {
         <Button
           type="button"
           fullWidth
+          className="max-w-sm"
           color="primary"
           variant="light"
           onPress={() => navigate("/login")}
