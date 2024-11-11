@@ -1,4 +1,4 @@
-import { Evaluation } from "routes/(app)/(workspace)/prompt-details/types";
+import { Evaluation } from "routes/$worskpaceSlug.prompts.$id/types";
 
 // Function to add a new evaluation to the list of evaluations and return the updated list
 export function addEvaluation(

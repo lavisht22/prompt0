@@ -9,7 +9,7 @@ import {
   getKeyValue,
   useDisclosure,
 } from "@nextui-org/react";
-import { Version } from "./page";
+import { Version } from "./route";
 import {
   useMemo,
   useCallback,

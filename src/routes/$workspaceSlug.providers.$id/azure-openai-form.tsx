@@ -2,7 +2,7 @@ import { Input } from "@nextui-org/react";
 import { Control, Controller } from "react-hook-form";
 import { z } from "zod";
 
-import { FormValues } from "./page";
+import { FormValues } from "./route";
 
 export const AzureOpenAIFormSchema = z.object({
   endpoint: z.string().min(1),

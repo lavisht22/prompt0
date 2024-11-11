@@ -10,7 +10,7 @@ import {
   Chip,
 } from "@nextui-org/react";
 import { LuHistory } from "react-icons/lu";
-import { Version } from "../page";
+import { Version } from "../route";
 import { formatDistanceToNow } from "date-fns";
 
 export default function History({

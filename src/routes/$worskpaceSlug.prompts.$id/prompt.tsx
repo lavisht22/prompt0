@@ -31,7 +31,7 @@ import Params from "./components/params";
 import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
 import History from "./components/history";
-import { Version } from "./page";
+import { Version } from "./route";
 import { addEvaluation, copyEvaluations } from "utils/evaluations";
 import { Json } from "supabase/functions/types";
 import { ToolSchema } from "./components/tool";

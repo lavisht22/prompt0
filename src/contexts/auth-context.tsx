@@ -8,10 +8,12 @@ import SplashScreen from "../components/splash-screen";
 
 interface AuthContextT {
   user: User | null;
+  userLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextT>({
   user: null,
+  userLoading: true,
 });
 
 export default function AuthProvider({
@@ -25,28 +27,22 @@ export default function AuthProvider({
   const [error, setError] = useState<string | null>(null);
 
   const [user, setUser] = useState<User | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
       try {
+        setUserLoading(true);
+
         const {
           data: { user },
         } = await supabase.auth.getUser();
-
-        // if (!user) {
-        //   navigate(
-        //     `/sign-in?returnTo=${encodeURIComponent(
-        //       navigation.location?.pathname || ""
-        //     )}`
-        //   );
-        //   return;
-        // }
 
         supabase.auth.onAuthStateChange((event) => {
           if (event === "SIGNED_OUT") {
             setUser(null);
             navigate(
-              `/sign-in?returnTo=${encodeURIComponent(
+              `/login?returnTo=${encodeURIComponent(
                 navigation.location?.pathname || ""
               )}`
             );
@@ -57,6 +53,8 @@ export default function AuthProvider({
       } catch (error) {
         console.error(error);
         setError("Could not load the page at the moment.");
+      } finally {
+        setUserLoading(false);
       }
     };
 
@@ -68,7 +66,9 @@ export default function AuthProvider({
   }
 
   return (
-    <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, userLoading }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 

@@ -2,16 +2,16 @@ import { Outlet, useParams } from "react-router-dom";
 
 import Sidebar from "./components/sidebar";
 import { useEffect } from "react";
-import useWorkspaceStore from "../../../stores/workspaces";
 
 import toast from "react-hot-toast";
-import SplashScreen from "../../../components/splash-screen";
+import SplashScreen from "components/splash-screen";
+import useWorkspacesStore from "stores/workspaces";
 
 export default function WorkspaceLayout() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
 
   const { workspaces, activeWorkspace, setActiveWorkspace } =
-    useWorkspaceStore();
+    useWorkspacesStore();
 
   useEffect(() => {
     try {
