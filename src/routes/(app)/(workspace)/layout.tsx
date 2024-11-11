@@ -3,33 +3,15 @@ import { Outlet, useParams } from "react-router-dom";
 import Sidebar from "./components/sidebar";
 import { useEffect } from "react";
 import useWorkspaceStore from "../../../stores/workspaces";
-import supabase from "../../../utils/supabase";
+
 import toast from "react-hot-toast";
 import SplashScreen from "../../../components/splash-screen";
 
 export default function WorkspaceLayout() {
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
 
-  const { workspaces, setWorkspaces, activeWorkspace, setActiveWorkspace } =
+  const { workspaces, activeWorkspace, setActiveWorkspace } =
     useWorkspaceStore();
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const { data, error } = await supabase.from("workspaces").select("*");
-
-        if (error) {
-          throw error;
-        }
-
-        setWorkspaces(data);
-      } catch {
-        toast.error("Oops! Something went wrong.");
-      }
-    };
-
-    init();
-  }, [setWorkspaces]);
 
   useEffect(() => {
     try {

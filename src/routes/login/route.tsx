@@ -8,9 +8,10 @@ export default function LoginPage() {
   return (
     <div className="flex flex-col items-center gap-6 w-full animate-fade">
       <h1 className="text-xl">Login to prompt0</h1>
-      <div className="flex flex-col gap-3 w-full">
+      <div className="flex flex-col items-center gap-3 w-full">
         <Button
           fullWidth
+          className="max-w-sm"
           color="primary"
           variant="flat"
           size="lg"
@@ -22,6 +23,7 @@ export default function LoginPage() {
         <Button
           isDisabled
           fullWidth
+          className="max-w-sm"
           color="primary"
           variant="flat"
           size="lg"

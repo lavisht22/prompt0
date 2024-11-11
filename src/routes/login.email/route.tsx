@@ -34,7 +34,7 @@ export default function LoginEmailPage() {
         email,
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: `${window.location.origin}`,
+          emailRedirectTo: `${window.location.origin}/welcome`,
         },
       });
 
@@ -86,6 +86,8 @@ export default function LoginEmailPage() {
           control={control}
           render={({ field, fieldState }) => (
             <Input
+              fullWidth
+              className="max-w-sm"
               autoFocus
               label="Email"
               placeholder="you@example.com"
@@ -97,12 +99,19 @@ export default function LoginEmailPage() {
           )}
         />
 
-        <Button type="submit" fullWidth color="primary" isLoading={loading}>
+        <Button
+          type="submit"
+          fullWidth
+          className="max-w-sm"
+          color="primary"
+          isLoading={loading}
+        >
           Continue with email
         </Button>
         <Button
           type="button"
           fullWidth
+          className="max-w-sm"
           color="primary"
           variant="light"
           onPress={() => navigate("/login")}

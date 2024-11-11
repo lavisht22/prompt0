@@ -22,6 +22,7 @@ import AuthProvider from "contexts/auth-context";
 import LoginPage from "routes/login/route";
 import LoginLayout from "routes/login/layout";
 import LoginEmailPage from "routes/login.email/route";
+import WelcomePage from "routes/welcome/route";
 
 const RootLayout = () => {
   const navigate = useNavigate();
@@ -50,6 +51,10 @@ const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
+          {
+            path: "/welcome",
+            element: <WelcomePage />,
+          },
           {
             path: ":workspaceSlug",
             element: <WorkspaceLayout />,
