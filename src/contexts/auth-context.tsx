@@ -22,7 +22,6 @@ export default function AuthProvider({
   const navigate = useNavigate();
   const navigation = useNavigation();
 
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [user, setUser] = useState<User | null>(null);
@@ -30,8 +29,6 @@ export default function AuthProvider({
   useEffect(() => {
     const init = async () => {
       try {
-        setLoading(true);
-
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -60,16 +57,14 @@ export default function AuthProvider({
       } catch (error) {
         console.error(error);
         setError("Could not load the page at the moment.");
-      } finally {
-        setLoading(false);
       }
     };
 
     init();
   }, [navigate, navigation.location?.pathname, setUser]);
 
-  if (loading || error) {
-    return <SplashScreen loading={loading} error={error} />;
+  if (error) {
+    return <SplashScreen loading={false} error={error} />;
   }
 
   return (

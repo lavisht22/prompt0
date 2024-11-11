@@ -21,6 +21,7 @@ import { ThemeProvider } from "next-themes";
 import { NextUIProvider } from "@nextui-org/react";
 import ProviderDetailsPage from "routes/(app)/(workspace)/provider-details/page";
 import LogsPage from "routes/(app)/(workspace)/logs-page/page";
+import AuthProvider from "contexts/auth-context";
 
 const RootLayout = () => {
   const navigate = useNavigate();
@@ -28,24 +29,27 @@ const RootLayout = () => {
   return (
     <NextUIProvider navigate={navigate}>
       <ThemeProvider attribute="class" defaultTheme="light">
-        <Outlet />
-        <Toaster />
+        <AuthProvider>
+          <Outlet />
+          <Toaster />
+        </AuthProvider>
       </ThemeProvider>
     </NextUIProvider>
   );
 };
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
       {
         path: "/",
+        element: <HomePage />,
+        index: true,
+      },
+      {
         element: <AppLayout />,
         children: [
-          {
-            index: true,
-            element: <HomePage />,
-          },
           {
             path: ":workspaceSlug",
             element: <WorkspaceLayout />,

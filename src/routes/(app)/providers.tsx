@@ -1,6 +1,7 @@
+// This is a placeholder for the app providers to be used in future
+
 import { PropsWithChildren } from "react";
-import AuthProvider from "../../contexts/auth-context";
 
 export default function AppProviders({ children }: PropsWithChildren) {
-  return <AuthProvider>{children}</AuthProvider>;
+  return <>{children}</>;
 }
