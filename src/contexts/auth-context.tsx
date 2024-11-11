@@ -33,14 +33,14 @@ export default function AuthProvider({
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (!user) {
-          navigate(
-            `/sign-in?returnTo=${encodeURIComponent(
-              navigation.location?.pathname || ""
-            )}`
-          );
-          return;
-        }
+        // if (!user) {
+        //   navigate(
+        //     `/sign-in?returnTo=${encodeURIComponent(
+        //       navigation.location?.pathname || ""
+        //     )}`
+        //   );
+        //   return;
+        // }
 
         supabase.auth.onAuthStateChange((event) => {
           if (event === "SIGNED_OUT") {

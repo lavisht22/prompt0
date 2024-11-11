@@ -8,9 +8,6 @@ import {
 } from "react-router-dom";
 
 import HomePage from "./routes/(app)/home/page";
-import SignInPage from "./routes/(auth)/sign-in/page";
-import SignUpPage from "./routes/(auth)/sign-up/page";
-import AuthLayout from "./routes/(auth)/layout";
 import { Toaster } from "react-hot-toast";
 import AppLayout from "./routes/(app)/layout";
 import WorkspaceLayout from "./routes/(app)/(workspace)/layout";
@@ -22,6 +19,9 @@ import { NextUIProvider } from "@nextui-org/react";
 import ProviderDetailsPage from "routes/(app)/(workspace)/provider-details/page";
 import LogsPage from "routes/(app)/(workspace)/logs-page/page";
 import AuthProvider from "contexts/auth-context";
+import LoginPage from "routes/login/route";
+import LoginLayout from "routes/login/layout";
+import LoginEmailPage from "routes/login.email/route";
 
 const RootLayout = () => {
   const navigate = useNavigate();
@@ -79,15 +79,16 @@ const router = createBrowserRouter([
         ],
       },
       {
-        element: <AuthLayout />,
+        path: "/login",
+        element: <LoginLayout />,
         children: [
           {
-            path: "/sign-in",
-            element: <SignInPage />,
+            path: "",
+            element: <LoginPage />,
           },
           {
-            path: "/sign-up",
-            element: <SignUpPage />,
+            path: "email",
+            element: <LoginEmailPage />,
           },
         ],
       },
