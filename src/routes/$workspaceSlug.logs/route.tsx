@@ -1,76 +1,100 @@
-import { useCallback, useEffect, useState } from "react";
+import { Key, useCallback, useEffect, useState, useRef } from "react";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
-import { Button, Selection, Select, SelectItem } from "@nextui-org/react";
+import { Button, Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import Log, { LogT } from "./component/log";
 import { LuRefreshCw } from "react-icons/lu";
+import useWorkspacesStore from "stores/workspaces";
 
 export default function LogsPage() {
+  const { activeWorkspace } = useWorkspacesStore();
+
   const [loading, setLoading] = useState(true);
   const [moreAvailable, setMoreAvailable] = useState(true);
   const [logs, setLogs] = useState<LogT[]>([]);
+  const [prompts, setPrompts] = useState<{ name: string; id: string }[]>([]);
 
-  const [statusFilter, setStatusFilter] = useState<Selection>(new Set([]));
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [promptFilter, setPromptFilter] = useState<string | null>(null);
 
-  const loadLogs = useCallback(async () => {
-    try {
-      setLoading(true);
+  const lastLogCreatedAt = useRef<string | null>(null);
 
-      const query = supabase
-        .from("logs")
-        .select(
-          "id, error, created_at, request, response, versions(prompts(name))"
-        )
-        .order("created_at", { ascending: false })
-        .limit(100);
+  const loadLogs = useCallback(
+    async (more = false) => {
+      try {
+        setLoading(true);
 
-      if (statusFilter !== "all" && statusFilter.size === 1) {
-        if (statusFilter.has("Error")) {
-          query.not("error", "is", null);
-        } else {
-          query.is("error", null);
+        const query = supabase
+          .from("logs")
+          .select(
+            "id, error, created_at, request, response, versions!inner(prompt_id, prompts(name))"
+          )
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (more) {
+          query.lt("created_at", lastLogCreatedAt.current);
         }
+
+        if (statusFilter !== null) {
+          if (statusFilter === "Error") {
+            query.not("error", "is", null);
+          } else {
+            query.is("error", null);
+          }
+        }
+
+        if (promptFilter !== null) {
+          query.eq("versions.prompt_id", promptFilter);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          throw error;
+        }
+
+        if (more) {
+          setLogs((prevLogs) => [...prevLogs, ...data]);
+        } else {
+          setLogs(data);
+        }
+
+        lastLogCreatedAt.current = data[data.length - 1].created_at;
+        setMoreAvailable(data.length === 100);
+      } catch {
+        toast.error("Oops! Something went wrong.");
+      } finally {
+        setLoading(false);
       }
+    },
+    [promptFilter, statusFilter]
+  );
 
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      setLogs(data);
-    } catch {
-      toast.error("Oops! Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
-
-  const loadMoreLogs = useCallback(async () => {
+  const loadPrompts = useCallback(async () => {
     try {
+      if (!activeWorkspace) return;
+
       const { data, error } = await supabase
-        .from("logs")
-        .select(
-          "id, error, created_at, request, response, versions(prompts(name))"
-        )
-        .lt("created_at", logs[logs.length - 1].created_at)
-        .order("created_at", { ascending: false })
-        .limit(100);
+        .from("prompts")
+        .select("name, id")
+        .eq("workspace_id", activeWorkspace.id);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
-      setLogs((prevLogs) => [...prevLogs, ...data]);
-      setMoreAvailable(data.length === 100);
+      setPrompts(data);
     } catch {
       toast.error("Oops! Something went wrong.");
     }
-  }, [logs]);
+  }, [activeWorkspace]);
 
   useEffect(() => {
-    loadLogs();
+    loadPrompts();
+  }, [loadPrompts]);
+
+  useEffect(() => {
+    loadLogs(false);
   }, [loadLogs]);
 
   return (
@@ -89,43 +113,67 @@ export default function LogsPage() {
         />
       ) : (
         <div className="flex-1 overflow-y-auto">
-          <div className="flex justify-between items-center p-4 border-b">
-            <div>
-              <Select
+          <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-background z-10">
+            <div className="flex items-center space-x-2">
+              <Autocomplete
                 size="sm"
-                className="w-32 items-center"
-                label="Status"
+                aria-label="Prompt"
                 variant="bordered"
-                placeholder="All"
-                selectedKeys={statusFilter}
-                onSelectionChange={setStatusFilter}
+                defaultItems={prompts}
+                placeholder="Prompt"
+                className="max-w-xs"
+                selectedKey={promptFilter}
+                onSelectionChange={(key: Key | null) =>
+                  setPromptFilter(key as string | null)
+                }
               >
-                <SelectItem
-                  key="Success"
-                  startContent={
-                    <div className="w-2 h-2 rounded-full bg-success-500"></div>
-                  }
-                >
-                  Success
-                </SelectItem>
-                <SelectItem
-                  key="Error"
-                  startContent={
-                    <div className="w-2 h-2 rounded-full bg-danger-500"></div>
-                  }
-                >
-                  Error
-                </SelectItem>
-              </Select>
+                {(item) => (
+                  <AutocompleteItem key={item.id}>{item.name}</AutocompleteItem>
+                )}
+              </Autocomplete>
+              <Autocomplete
+                size="sm"
+                aria-label="Status"
+                variant="bordered"
+                className="w-52"
+                placeholder="Status"
+                selectedKey={statusFilter}
+                defaultItems={[
+                  { id: "Success", name: "Success" },
+                  { id: "Error", name: "Error" },
+                ]}
+                onSelectionChange={(key: Key | null) =>
+                  setStatusFilter(key as string | null)
+                }
+              >
+                {(item) => (
+                  <AutocompleteItem
+                    key={item.id}
+                    startContent={
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          item.id === "Success"
+                            ? "bg-success-500"
+                            : "bg-danger-500"
+                        }`}
+                      />
+                    }
+                  >
+                    {item.name}
+                  </AutocompleteItem>
+                )}
+              </Autocomplete>
             </div>
             <Button
               size="sm"
-              startContent={<LuRefreshCw />}
-              isLoading={loading}
-              onPress={loadLogs}
-            >
-              Reload
-            </Button>
+              startContent={
+                <LuRefreshCw className={loading ? "animate-spin" : ""} />
+              }
+              isDisabled={loading}
+              onPress={() => loadLogs(false)}
+              isIconOnly
+              aria-label="Reload"
+            />
           </div>
           {logs.map((log) => (
             <Log key={log.id} log={log} />
@@ -136,7 +184,7 @@ export default function LogsPage() {
                 variant="light"
                 fullWidth
                 isLoading={loading}
-                onClick={loadMoreLogs}
+                onPress={() => loadLogs(true)}
               >
                 Showing {logs.length} entries. Click to load more.
               </Button>
