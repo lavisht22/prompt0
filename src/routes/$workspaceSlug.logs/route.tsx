@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
 import { Button, Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import Log, { LogT } from "./component/log";
-import { LuRefreshCw } from "react-icons/lu";
+import { LuCircleDot, LuMessageCircle, LuRefreshCw } from "react-icons/lu";
 import useWorkspacesStore from "stores/workspaces";
 
 export default function LogsPage() {
@@ -117,6 +117,7 @@ export default function LogsPage() {
             <div className="flex items-center space-x-2">
               <Autocomplete
                 size="sm"
+                startContent={<LuMessageCircle className="size-5" />}
                 aria-label="Prompt"
                 variant="bordered"
                 defaultItems={prompts}
@@ -133,10 +134,11 @@ export default function LogsPage() {
               </Autocomplete>
               <Autocomplete
                 size="sm"
+                startContent={<LuCircleDot className="size-5 " />}
                 aria-label="Status"
                 variant="bordered"
-                className="w-52"
                 placeholder="Status"
+                className="max-w-40"
                 selectedKey={statusFilter}
                 defaultItems={[
                   { id: "Success", name: "Success" },
