@@ -180,8 +180,6 @@ export async function generate(
     ...(messages || []),
   ];
 
-  console.log("params", params);
-
   try {
     if (stream) {
       const encoder = new TextEncoder();
@@ -275,6 +273,8 @@ export async function generate(
           completion_tokens: response.usage?.completion_tokens,
         } as ChatResponse;
       });
+
+      console.log("got response");
 
       await insertLog(
         id,
