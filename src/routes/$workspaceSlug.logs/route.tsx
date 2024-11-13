@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
-import { Button } from "@nextui-org/react";
+import { Button, Selection, Select, SelectItem } from "@nextui-org/react";
 import Log, { LogT } from "./component/log";
 import { LuRefreshCw } from "react-icons/lu";
 
@@ -11,17 +11,29 @@ export default function LogsPage() {
   const [moreAvailable, setMoreAvailable] = useState(true);
   const [logs, setLogs] = useState<LogT[]>([]);
 
+  const [statusFilter, setStatusFilter] = useState<Selection>(new Set([]));
+
   const loadLogs = useCallback(async () => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
+      const query = supabase
         .from("logs")
         .select(
           "id, error, created_at, request, response, versions(prompts(name))"
         )
         .order("created_at", { ascending: false })
         .limit(100);
+
+      if (statusFilter !== "all" && statusFilter.size === 1) {
+        if (statusFilter.has("Error")) {
+          query.not("error", "is", null);
+        } else {
+          query.is("error", null);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -33,7 +45,7 @@ export default function LogsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   const loadMoreLogs = useCallback(async () => {
     try {
@@ -78,7 +90,34 @@ export default function LogsPage() {
       ) : (
         <div className="flex-1 overflow-y-auto">
           <div className="flex justify-between items-center p-4 border-b">
-            <div />
+            <div>
+              <Select
+                size="sm"
+                className="w-32 items-center"
+                label="Status"
+                variant="bordered"
+                placeholder="All"
+                selectedKeys={statusFilter}
+                onSelectionChange={setStatusFilter}
+              >
+                <SelectItem
+                  key="Success"
+                  startContent={
+                    <div className="w-2 h-2 rounded-full bg-success-500"></div>
+                  }
+                >
+                  Success
+                </SelectItem>
+                <SelectItem
+                  key="Error"
+                  startContent={
+                    <div className="w-2 h-2 rounded-full bg-danger-500"></div>
+                  }
+                >
+                  Error
+                </SelectItem>
+              </Select>
+            </div>
             <Button
               size="sm"
               startContent={<LuRefreshCw />}
