@@ -134,7 +134,7 @@ export default function LogsPage() {
               </Autocomplete>
               <Autocomplete
                 size="sm"
-                startContent={<LuCircleDot className="size-5 " />}
+                startContent={<LuCircleDot className="size-5" />}
                 aria-label="Status"
                 variant="bordered"
                 placeholder="Status"
