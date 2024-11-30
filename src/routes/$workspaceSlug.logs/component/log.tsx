@@ -8,18 +8,20 @@ import Editor from "@monaco-editor/react";
 
 export type LogT = {
   id: string;
-  versions: {
-    prompts: {
-      name: string;
-    } | null;
-  } | null;
+  version_id: string | null;
   error: Json | null;
   created_at: string;
   request: Json;
   response: Json;
 };
 
-export default function Log({ log }: { log: LogT }) {
+export default function Log({
+  log,
+  prompt,
+}: {
+  log: LogT;
+  prompt: string | undefined;
+}) {
   const { theme } = useTheme();
   const [expanded, setExpanded] = useState(false);
 
@@ -60,9 +62,7 @@ export default function Log({ log }: { log: LogT }) {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="block">
-                {log.versions?.prompts?.name || "-"}
-              </span>
+              <span className="block">{prompt || "-"}</span>
               <div
                 className={`w-2 h-2 rounded-full ${
                   log.error ? "bg-danger-500" : "bg-success-500"

@@ -1,4 +1,4 @@
-import { Key, useCallback, useEffect, useState, useRef } from "react";
+import { Key, useCallback, useEffect, useState, useRef, useMemo } from "react";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
@@ -13,40 +13,64 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [moreAvailable, setMoreAvailable] = useState(true);
   const [logs, setLogs] = useState<LogT[]>([]);
-  const [prompts, setPrompts] = useState<{ name: string; id: string }[]>([]);
+  const [versions, setVersions] = useState<
+    { id: string; prompts: { name: string; id: string } }[]
+  >([]);
 
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [promptFilter, setPromptFilter] = useState<string | null>(null);
 
   const lastLogCreatedAt = useRef<string | null>(null);
 
+  const prompts = useMemo(() => {
+    const promptsMap = new Map<string, { name: string; id: string }>();
+
+    versions.forEach((version) => {
+      promptsMap.set(version.prompts.id, version.prompts);
+    });
+
+    return Array.from(promptsMap.values());
+  }, [versions]);
+
+  const filteredLogs = useMemo(() => {
+    let allLogs = [...logs];
+
+    if (promptFilter) {
+      const allVersionIds = versions.filter(
+        (v) => v.prompts.id === promptFilter
+      );
+
+      allLogs = allLogs.filter((log) =>
+        allVersionIds.some((v) => v.id === log.version_id)
+      );
+    }
+
+    if (statusFilter !== null) {
+      if (statusFilter === "Error") {
+        allLogs = allLogs.filter((log) => log.error !== null);
+      } else {
+        allLogs = allLogs.filter((log) => log.error === null);
+      }
+    }
+
+    return allLogs;
+  }, [logs, versions, promptFilter, statusFilter]);
+
   const loadLogs = useCallback(
     async (more = false) => {
       try {
+        if (!activeWorkspace) return;
         setLoading(true);
 
         const query = supabase
           .from("logs")
-          .select(
-            "id, error, created_at, request, response, versions!inner(prompt_id, prompts(name))"
-          )
+          .select("id, version_id, error, created_at, request, response")
+          .eq("workspace_id", activeWorkspace.id)
           .order("created_at", { ascending: false })
-          .limit(100);
+          .limit(500);
 
         if (more) {
           query.lt("created_at", lastLogCreatedAt.current);
-        }
-
-        if (statusFilter !== null) {
-          if (statusFilter === "Error") {
-            query.not("error", "is", null);
-          } else {
-            query.is("error", null);
-          }
-        }
-
-        if (promptFilter !== null) {
-          query.eq("versions.prompt_id", promptFilter);
         }
 
         const { data, error } = await query;
@@ -62,36 +86,36 @@ export default function LogsPage() {
         }
 
         lastLogCreatedAt.current = data[data.length - 1].created_at;
-        setMoreAvailable(data.length === 100);
+        setMoreAvailable(data.length === 500);
       } catch {
         toast.error("Oops! Something went wrong.");
       } finally {
         setLoading(false);
       }
     },
-    [promptFilter, statusFilter]
+    [activeWorkspace]
   );
 
-  const loadPrompts = useCallback(async () => {
+  const loadVersions = useCallback(async () => {
     try {
       if (!activeWorkspace) return;
 
       const { data, error } = await supabase
-        .from("prompts")
-        .select("name, id")
-        .eq("workspace_id", activeWorkspace.id);
+        .from("versions")
+        .select("id, prompts!inner(id, name)")
+        .eq("prompts.workspace_id", activeWorkspace?.id);
 
       if (error) throw error;
 
-      setPrompts(data);
+      setVersions(data);
     } catch {
       toast.error("Oops! Something went wrong.");
     }
   }, [activeWorkspace]);
 
   useEffect(() => {
-    loadPrompts();
-  }, [loadPrompts]);
+    loadVersions();
+  }, [loadVersions]);
 
   useEffect(() => {
     loadLogs(false);
@@ -177,9 +201,13 @@ export default function LogsPage() {
               aria-label="Reload"
             />
           </div>
-          {logs.map((log) => (
-            <Log key={log.id} log={log} />
-          ))}
+          {filteredLogs.map((log) => {
+            const version = versions.find((v) => v.id === log.version_id);
+
+            return (
+              <Log key={log.id} log={log} prompt={version?.prompts.name} />
+            );
+          })}
           {logs.length > 0 && moreAvailable && (
             <div className="flex justify-center items-center p-4">
               <Button
@@ -188,7 +216,7 @@ export default function LogsPage() {
                 isLoading={loading}
                 onPress={() => loadLogs(true)}
               >
-                Showing {logs.length} entries. Click to load more.
+                Loaded {logs.length} entries. Click to load more.
               </Button>
             </div>
           )}
