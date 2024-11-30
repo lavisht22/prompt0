@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import FullSpinner from "components/full-spinner";
 import Prompt from "./prompt";
 import Evaluate from "./evaluate";
+import Menu from "./components/menu";
 
 export type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -99,6 +100,8 @@ export default function PromptDetailsPage() {
               <span className="text-xs font-bold">UNSAVED</span>
             </div>
           )}
+
+          <Menu promptId={promptId} />
         </div>
 
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
