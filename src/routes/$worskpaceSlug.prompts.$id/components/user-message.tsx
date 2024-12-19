@@ -64,29 +64,6 @@ export default function UserMessage({
                 key={index}
                 className="py-4 border-b-2 flex flex-col gap-2 relative"
               >
-                {/* <div className="flex justify-between items-center px-2">
-                  <span className="block text-xs font-medium">
-                    {part.type === "text" ? "Text Part" : "Image Part"}
-                  </span>
-
-                  <Button
-                    variant="light"
-                    size="sm"
-                    isIconOnly
-                    radius="full"
-                    onPress={() => {
-                      const newContent = value.content.filter(
-                        (_, i) => i !== index
-                      );
-                      onValueChange({
-                        ...value,
-                        content: newContent,
-                      });
-                    }}
-                  >
-                    <LuX className="w-4 h-4" />
-                  </Button>
-                </div> */}
                 {part.type === "text" && (
                   <>
                     <Textarea

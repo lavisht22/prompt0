@@ -1,5 +1,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Card, CardBody, Chip, Kbd } from "@nextui-org/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  Chip,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+  Kbd,
+} from "@nextui-org/react";
 import {
   Controller,
   FormProvider,
@@ -436,8 +446,8 @@ export default function Prompt({
         onSubmit={methods.handleSubmit(save, console.error)}
       >
         <div className="flex h-full overflow-hidden">
-          <div className="basis-2/5 h-full overflow-y-auto border-r space-y-4">
-            <div className="p-4 flex flex-col gap-4">
+          <div className="basis-2/5 h-full  border-r flex flex-col">
+            <div className="p-4 space-y-4 flex-1 flex-col gap-4 overflow-y-auto">
               <Tools />
 
               {messages.map((field, index) => {
@@ -512,33 +522,37 @@ export default function Prompt({
               })}
             </div>
 
-            <div className="flex gap-2 sticky bottom-0 bg-background z-10 p-4 border-t">
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
-                onPress={() =>
-                  addMessage({
-                    role: "user",
-                    content: [{ type: "text", text: "" }],
-                  })
-                }
-              >
-                User
-              </Button>
-              <Button
-                variant="flat"
-                size="sm"
-                startContent={<LuPlus />}
-                onPress={() =>
-                  addMessage({
-                    role: "assistant",
-                    content: "",
-                  })
-                }
-              >
-                Assistant
-              </Button>
+            <div className="flex gap-2 p-4 border-t">
+              <Dropdown>
+                <DropdownTrigger>
+                  <Button
+                    variant="flat"
+                    size="sm"
+                    startContent={<LuPlus className="size-4" />}
+                  >
+                    Message
+                  </Button>
+                </DropdownTrigger>
+                <DropdownMenu>
+                  <DropdownItem
+                    onPress={() =>
+                      addMessage({
+                        role: "user",
+                        content: [{ type: "text", text: "" }],
+                      })
+                    }
+                  >
+                    User
+                  </DropdownItem>
+                  <DropdownItem
+                    onPress={() =>
+                      addMessage({ role: "assistant", content: "" })
+                    }
+                  >
+                    Assistant
+                  </DropdownItem>
+                </DropdownMenu>
+              </Dropdown>
             </div>
           </div>
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
