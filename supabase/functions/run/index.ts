@@ -1,5 +1,3 @@
-import { OpenAI } from "https://esm.sh/openai@4.57.0";
-
 import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
 import { serviceClient } from "../_shared/supabase.ts";
 import { generate, Version } from "../_shared/generate.ts";
@@ -10,44 +8,40 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { prompt_id, version_id, stream, variables, messages }: {
-      prompt_id: string;
-      version_id: string;
+    const { provider_id, workspace_id, prompt, variables, stream }: {
+      workspace_id: string;
+      provider_id: string;
+      prompt: string;
       stream?: boolean;
       variables?: {
         [key: string]: string;
       };
-      messages?: OpenAI.Chat.ChatCompletionMessageParam[];
     } = await req
       .json();
 
-    if (!prompt_id || !version_id) {
-      return ErrorResponse("prompt_id and version_id are required", 400);
-    }
-
-    const before = Date.now();
-
-    const { data: version, error: versionReadError } = await serviceClient.from(
-      "versions",
-    ).select(
-      "*, providers(id, type, options, keys(value)), prompts(id, workspace_id)",
-    ).eq(
-      "id",
-      version_id,
-    ).eq("prompt_id", prompt_id).single();
-
-    if (versionReadError) {
-      throw versionReadError;
-    }
-
-    if (!version.providers) {
+    if (!prompt || !provider_id || !workspace_id) {
       return ErrorResponse(
-        "No provider has been linked with this prompt. Please link a provider to continue.",
+        "prompt, provider_id and workspace_id are required",
         400,
       );
     }
 
-    if (!version.providers.keys) {
+    const before = Date.now();
+
+    const { data: provider, error: providerReadError } = await serviceClient
+      .from(
+        "providers",
+      ).select(
+        "id, type, options, keys(value)",
+      ).eq(
+        "id",
+        provider_id,
+      ).single();
+
+    if (providerReadError) {
+      throw providerReadError;
+    }
+    if (!provider.keys) {
       return ErrorResponse(
         "No API key has been linked with this provider. Please link an API key to continue.",
         400,
@@ -58,9 +52,24 @@ Deno.serve(async (req) => {
 
     console.log("Read time", after - before);
 
-    return generate(version as Version, stream, variables, messages);
-  } catch (error) {
+    return generate(
+      {
+        id: null,
+        prompts: {
+          id: "",
+          workspace_id,
+        },
+        providers: provider,
+        params: prompt,
+      } as Version,
+      stream,
+      variables,
+    );
+  } catch (error: unknown) {
     console.error(error);
-    return ErrorResponse(error.message, 500);
+    if (error instanceof Error) {
+      return ErrorResponse(error.message, 500);
+    }
+    return ErrorResponse("An unknown error occurred", 500);
   }
 });

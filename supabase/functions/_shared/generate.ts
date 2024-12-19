@@ -96,7 +96,7 @@ export function applyVariables(
 }
 
 export type Version = {
-  id: string;
+  id: string | null;
   prompts: {
     id: string;
     workspace_id: string;
@@ -114,7 +114,7 @@ export type Version = {
 async function insertLog(
   id: string,
   workspace_id: string,
-  version_id: string,
+  version_id: string | null,
   request: unknown,
   response: unknown,
   error: unknown,
@@ -263,7 +263,8 @@ export async function generate(
       const response = await client.chat.completions.create({
         ...params,
         stream: false,
-      }).then((response) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }).then((response: any) => {
         return {
           id,
           model: response.model,

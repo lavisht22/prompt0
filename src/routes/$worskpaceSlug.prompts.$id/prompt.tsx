@@ -271,6 +271,110 @@ export default function Prompt({
     []
   );
 
+  const run = useCallback(
+    async (values: FormValues) => {
+      try {
+        if (!promptId || !activeWorkspace) {
+          return;
+        }
+
+        const provider_id = values.provider_id;
+        const prompt = {
+          messages: values.messages,
+          tools: values.tools,
+          tool_choice: values.tool_choice,
+          parallel_tool_calls: values.parallel_tool_calls,
+          model: values.model,
+          max_tokens: values.max_tokens,
+          temperature: values.temperature,
+          response_format: values.response_format,
+        };
+
+        setResponse({
+          role: "assistant",
+          content: null,
+          tool_calls: null,
+        });
+
+        const events = await stream(
+          "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              provider_id,
+              workspace_id: activeWorkspace.id,
+              prompt,
+              stream: true,
+              variables: Object.fromEntries(variableValues),
+            }),
+            headers: {
+              Authorization: `Bearer ${
+                import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
+              }`,
+            },
+          }
+        );
+
+        const responseCp: z.infer<typeof AssistantMessageSchema> = {
+          role: "assistant",
+          content: null,
+          tool_calls: null,
+        };
+
+        for await (const event of events) {
+          if (!event.data) {
+            continue;
+          }
+
+          const data = JSON.parse(event.data) as ResponseDelta;
+
+          if (data.delta.content) {
+            if (!responseCp.content) {
+              responseCp.content = "";
+            }
+
+            responseCp.content += data.delta.content;
+          }
+
+          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+            if (!responseCp.tool_calls) {
+              responseCp.tool_calls = [];
+            }
+
+            data.delta.tool_calls.forEach((tc) => {
+              const prevIndex = responseCp.tool_calls?.findIndex(
+                (t) => t.index === tc.index
+              );
+
+              if (prevIndex === -1 || prevIndex === undefined) {
+                responseCp.tool_calls?.push({
+                  index: tc.index,
+                  id: tc.id ?? "",
+                  type: tc.type ?? "function",
+                  function: {
+                    name: tc.function.name ?? "",
+                    arguments: tc.function.arguments,
+                  },
+                });
+              } else {
+                responseCp.tool_calls![prevIndex].function.arguments +=
+                  tc.function.arguments;
+              }
+            });
+          }
+
+          setResponse({ ...responseCp });
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Oops! Something went wrong.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [promptId, activeWorkspace, variableValues]
+  );
+
   const save = useCallback(
     async (values: FormValues) => {
       try {
@@ -446,8 +550,8 @@ export default function Prompt({
         onSubmit={methods.handleSubmit(save, console.error)}
       >
         <div className="flex h-full overflow-hidden">
-          <div className="basis-2/5 h-full  border-r flex flex-col">
-            <div className="p-4 space-y-4 flex-1 flex-col gap-4 overflow-y-auto">
+          <div className="basis-2/5 h-full overflow-y-auto border-r">
+            <div className="p-4 space-y-4 flex flex-col overflow-y-auto">
               <Tools />
 
               {messages.map((field, index) => {
@@ -522,7 +626,7 @@ export default function Prompt({
               })}
             </div>
 
-            <div className="flex gap-2 p-4 border-t">
+            <div className="sticky bottom-0 bg-background z-10 flex justify-between items-center gap-2 p-4 border-t">
               <Dropdown>
                 <DropdownTrigger>
                   <Button
@@ -567,25 +671,44 @@ export default function Prompt({
                 />
               </CardBody>
             </Card>
-            <div>
-              {((response.content && response.content.length > 0) ||
-                (response.tool_calls && response.tool_calls.length > 0)) && (
-                <Button
-                  size="sm"
-                  variant="flat"
-                  startContent={<LuCornerUpLeft />}
-                  onPress={() => {
-                    addMessage(response);
-                    setResponse({
-                      role: "assistant",
-                      content: null,
-                      tool_calls: null,
-                    });
-                  }}
-                >
-                  Add to conversation
-                </Button>
-              )}
+            <div className="flex justify-between">
+              <div>
+                {((response.content && response.content.length > 0) ||
+                  (response.tool_calls && response.tool_calls.length > 0)) && (
+                  <Button
+                    size="sm"
+                    variant="flat"
+                    startContent={<LuCornerUpLeft />}
+                    onPress={() => {
+                      addMessage(response);
+                      setResponse({
+                        role: "assistant",
+                        content: null,
+                        tool_calls: null,
+                      });
+                    }}
+                  >
+                    Add to conversation
+                  </Button>
+                )}
+              </div>
+
+              <Button
+                className="mx-2"
+                isDisabled={saving}
+                onPress={() => methods.handleSubmit(run, console.error)()}
+                size="sm"
+                color="primary"
+                startContent={<LuPlay />}
+                endContent={
+                  <Kbd
+                    className="text-xs bg-opacity-20 shadow-none text-default"
+                    keys={["command", "enter"]}
+                  />
+                }
+              >
+                Run
+              </Button>
             </div>
           </div>
           <div className="basis-1/5 w-56 p-3 flex flex-col gap-4">
@@ -611,22 +734,7 @@ export default function Prompt({
         >
           <LuBraces className="w-4 h-4" />
         </Button>
-        <Button
-          className="mx-2"
-          isDisabled={saving}
-          onPress={() => methods.handleSubmit(save, console.error)()}
-          size="sm"
-          color="primary"
-          startContent={<LuPlay />}
-          endContent={
-            <Kbd
-              className="text-xs bg-opacity-20 shadow-none text-default"
-              keys={["command", "enter"]}
-            />
-          }
-        >
-          Run
-        </Button>
+
         <Deploy
           isDirty={methods.formState.isDirty}
           activeVersionId={activeVersionId}
