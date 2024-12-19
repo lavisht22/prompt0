@@ -16,7 +16,13 @@ import {
   useFieldArray,
   useForm,
 } from "react-hook-form";
-import { LuBraces, LuCornerUpLeft, LuPlay, LuPlus } from "react-icons/lu";
+import {
+  LuBraces,
+  LuCornerUpLeft,
+  LuPlay,
+  LuPlus,
+  LuSave,
+} from "react-icons/lu";
 import { z } from "zod";
 import SystemMessage, {
   SystemMessageSchema,
@@ -36,14 +42,11 @@ import AssistantMessage, {
 } from "./components/assistant-message";
 import { useHotkeys } from "react-hotkeys-hook";
 import VariablesDialog from "./components/variables-dialog";
-import { extractVaraiblesFromMessages } from "utils/variables";
 import Params from "./components/params";
 import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
 import History from "./components/history";
 import { Version } from "./route";
-import { addEvaluation, copyEvaluations } from "utils/evaluations";
-import { Json } from "supabase/functions/types";
 import { ToolSchema } from "./components/tool";
 import { Evaluation, ResponseDelta } from "./types";
 import Tools from "./components/tools";
@@ -174,103 +177,6 @@ export default function Prompt({
     }
   }, [evaluations]);
 
-  const generate = useCallback(
-    async (version: Version, variables: Map<string, string>) => {
-      setResponse({
-        role: "assistant",
-        content: null,
-        tool_calls: null,
-      });
-
-      const events = await stream(
-        "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            prompt_id: version.prompt_id,
-            version_id: version.id,
-            stream: true,
-            variables: Object.fromEntries(variables),
-          }),
-          headers: {
-            Authorization: `Bearer ${
-              import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
-            }`,
-          },
-        }
-      );
-
-      const responseCp: z.infer<typeof AssistantMessageSchema> = {
-        role: "assistant",
-        content: null,
-        tool_calls: null,
-      };
-
-      for await (const event of events) {
-        if (!event.data) {
-          continue;
-        }
-
-        const data = JSON.parse(event.data) as ResponseDelta;
-
-        if (data.delta.content) {
-          if (!responseCp.content) {
-            responseCp.content = "";
-          }
-
-          responseCp.content += data.delta.content;
-        }
-
-        if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
-          if (!responseCp.tool_calls) {
-            responseCp.tool_calls = [];
-          }
-
-          data.delta.tool_calls.forEach((tc) => {
-            const prevIndex = responseCp.tool_calls?.findIndex(
-              (t) => t.index === tc.index
-            );
-
-            if (prevIndex === -1 || prevIndex === undefined) {
-              responseCp.tool_calls?.push({
-                index: tc.index,
-                id: tc.id ?? "",
-                type: tc.type ?? "function",
-                function: {
-                  name: tc.function.name ?? "",
-                  arguments: tc.function.arguments,
-                },
-              });
-            } else {
-              responseCp.tool_calls![prevIndex].function.arguments +=
-                tc.function.arguments;
-            }
-          });
-        }
-
-        setResponse({ ...responseCp });
-      }
-
-      const versionEvaluations = version.evaluations as unknown as Evaluation[];
-
-      // Add to evaluations for this version
-      const newEvaluations = addEvaluation(versionEvaluations, {
-        variables: Object.fromEntries(variables),
-        response: responseCp,
-        created_at: new Date().toISOString(),
-      });
-
-      await supabase
-        .from("versions")
-        .update({
-          evaluations: newEvaluations as unknown as Json,
-        })
-        .eq("id", version.id)
-        .throwOnError();
-    },
-    []
-  );
-
   const run = useCallback(
     async (values: FormValues) => {
       try {
@@ -382,28 +288,9 @@ export default function Prompt({
           return;
         }
 
-        const variables = extractVaraiblesFromMessages(values.messages);
-
-        const cleanedVariables = new Map<string, string>();
-
-        // Check if each variable has a value
-        for (const variable of variables) {
-          const variableValue = variableValues.get(variable);
-          if (variableValue === undefined || variableValue.length === 0) {
-            setVariablesOpen(true);
-            return;
-          } else {
-            cleanedVariables.set(variable, variableValue);
-          }
-        }
-        setVariableValues(cleanedVariables);
-
         setSaving(true);
 
-        let version: Version | null = activeVersion;
-
         let promptIdToBeUsed: string = promptId;
-        let evaluationsToAdd: Evaluation[] = evaluations;
 
         if (methods.formState.isDirty) {
           if (promptId === "create") {
@@ -436,21 +323,21 @@ export default function Prompt({
             promptIdToBeUsed = createdPrompt.id;
           }
 
-          // Determine which evaluations to copy over from previous version
-          const prevEvaluations = copyEvaluations(
-            evaluations,
-            cleanedVariables
-          );
+          // // Determine which evaluations to copy over from previous version
+          // const prevEvaluations = copyEvaluations(
+          //   evaluations,
+          //   cleanedVariables
+          // );
 
-          evaluationsToAdd = addEvaluation(prevEvaluations, {
-            variables: Object.fromEntries(cleanedVariables),
-            response: {
-              role: "assistant",
-              content: null,
-              tool_calls: null,
-            },
-            created_at: new Date().toISOString(),
-          });
+          // evaluationsToAdd = addEvaluation(prevEvaluations, {
+          //   variables: Object.fromEntries(cleanedVariables),
+          //   response: {
+          //     role: "assistant",
+          //     content: null,
+          //     tool_calls: null,
+          //   },
+          //   created_at: new Date().toISOString(),
+          // });
 
           const number = Math.max(...versions.map((v) => v.number), 0) + 1;
 
@@ -473,7 +360,7 @@ export default function Prompt({
                 temperature: values.temperature,
                 response_format: values.response_format,
               },
-              evaluations: evaluationsToAdd as unknown as Json,
+              // evaluations: evaluationsToAdd as unknown as Json,
             })
             .select()
             .single();
@@ -482,22 +369,16 @@ export default function Prompt({
             throw error;
           }
 
-          version = data;
           setVersions([data, ...versions]);
           setActiveVersionId(data.id);
 
           methods.reset(values);
 
           if (promptId === "create") {
-            navigate(`/${activeWorkspace.slug}/prompts/${version.prompt_id}`);
+            navigate(`/${activeWorkspace.slug}/prompts/${promptIdToBeUsed}`);
 
             return;
           }
-        }
-
-        if (version) {
-          // Call the generate function
-          await generate(version, cleanedVariables);
         }
       } catch (error) {
         console.error(error);
@@ -509,17 +390,13 @@ export default function Prompt({
     [
       promptId,
       activeWorkspace,
-      activeVersion,
-      evaluations,
       methods,
-      variableValues,
       versions,
       setVersions,
       setActiveVersionId,
       name,
       setName,
       navigate,
-      generate,
     ]
   );
 
@@ -694,7 +571,6 @@ export default function Prompt({
               </div>
 
               <Button
-                className="mx-2"
                 isDisabled={saving}
                 onPress={() => methods.handleSubmit(run, console.error)()}
                 size="sm"
@@ -733,6 +609,18 @@ export default function Prompt({
           onPress={() => setVariablesOpen(true)}
         >
           <LuBraces className="w-4 h-4" />
+        </Button>
+
+        <Button
+          className="mx-2"
+          color="primary"
+          size="sm"
+          isDisabled={!methods.formState.isDirty}
+          isLoading={saving}
+          startContent={<LuSave />}
+          onPress={() => methods.handleSubmit(save)()}
+        >
+          Save
         </Button>
 
         <Deploy
