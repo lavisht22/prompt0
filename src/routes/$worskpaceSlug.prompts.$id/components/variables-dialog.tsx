@@ -1,11 +1,11 @@
 import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
   Textarea,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
+  DrawerFooter,
 } from "@nextui-org/react";
 import { LuPlay } from "react-icons/lu";
 import { FormValues } from "../prompt";
@@ -34,15 +34,15 @@ export default function VariablesDialog({
   }, [getFormValues, isOpen]);
 
   return (
-    <Modal
+    <Drawer
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       scrollBehavior="inside"
       backdrop="blur"
     >
-      <ModalContent>
-        <ModalHeader>Variables</ModalHeader>
-        <ModalBody className="flex flex-col gap-4">
+      <DrawerContent>
+        <DrawerHeader>Variables</DrawerHeader>
+        <DrawerBody className="flex flex-col gap-4">
           {variables.map((variable) => {
             const value = values.get(variable);
 
@@ -51,6 +51,7 @@ export default function VariablesDialog({
                 <Textarea
                   isInvalid={value === undefined || value.length === 0}
                   label={`{{${variable}}}`}
+                  size="sm"
                   labelPlacement="outside"
                   minRows={1}
                   maxRows={5}
@@ -62,8 +63,8 @@ export default function VariablesDialog({
               </div>
             );
           })}
-        </ModalBody>
-        <ModalFooter>
+        </DrawerBody>
+        <DrawerFooter>
           <Button
             isDisabled={variables.some((variable) => {
               const value = values.get(variable);
@@ -79,8 +80,8 @@ export default function VariablesDialog({
           >
             Run
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

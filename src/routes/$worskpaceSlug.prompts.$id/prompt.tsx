@@ -503,7 +503,7 @@ export default function Prompt({
               })}
             </div>
 
-            <div className="sticky bottom-0 bg-background z-10 flex justify-between items-center gap-2 p-4 border-t">
+            <div className="sticky bottom-0 bg-background z-10 flex items-center gap-2 p-4 border-t">
               <Dropdown>
                 <DropdownTrigger>
                   <Button
@@ -516,6 +516,7 @@ export default function Prompt({
                 </DropdownTrigger>
                 <DropdownMenu>
                   <DropdownItem
+                    key="user"
                     onPress={() =>
                       addMessage({
                         role: "user",
@@ -526,6 +527,7 @@ export default function Prompt({
                     User
                   </DropdownItem>
                   <DropdownItem
+                    key="assistant"
                     onPress={() =>
                       addMessage({ role: "assistant", content: "" })
                     }
@@ -534,6 +536,14 @@ export default function Prompt({
                   </DropdownItem>
                 </DropdownMenu>
               </Dropdown>
+              <Button
+                size="sm"
+                variant="flat"
+                onPress={() => setVariablesOpen(true)}
+                startContent={<LuBraces className="w-4 h-4" />}
+              >
+                Variables
+              </Button>
             </div>
           </div>
           <div className="basis-2/5 h-full overflow-y-auto border-r p-4 space-y-4">
@@ -598,18 +608,10 @@ export default function Prompt({
         getFormValues={methods.getValues}
         values={variableValues}
         setValues={setVariableValues}
-        onRun={() => methods.handleSubmit(save)()}
+        onRun={() => methods.handleSubmit(run)()}
       />
       <div className="flex items-center absolute right-3 top-0 h-12">
         <History versions={versions} setActiveVersionId={setActiveVersionId} />
-        <Button
-          size="sm"
-          variant="light"
-          isIconOnly
-          onPress={() => setVariablesOpen(true)}
-        >
-          <LuBraces className="w-4 h-4" />
-        </Button>
 
         <Button
           className="mx-2"
