@@ -45,7 +45,6 @@ import VariablesDialog from "./components/variables-dialog";
 import Params from "./components/params";
 import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
-import History from "./components/history";
 import { Version } from "./route";
 import { ToolSchema } from "./components/tool";
 import { ResponseDelta } from "./types";
@@ -583,8 +582,6 @@ export default function Prompt({
         onRun={() => methods.handleSubmit(run)()}
       />
       <div className="flex items-center absolute right-3 top-0 h-12">
-        <History versions={versions} setActiveVersionId={setActiveVersionId} />
-
         <Button
           className="mx-2"
           color="primary"

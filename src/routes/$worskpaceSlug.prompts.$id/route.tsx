@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Name from "./components/name";
 import { useParams } from "react-router-dom";
-import { Tabs, Tab } from "@nextui-org/react";
+import { Tabs, Tab, Tooltip } from "@nextui-org/react";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import { Database } from "supabase/functions/types";
@@ -10,6 +10,7 @@ import FullSpinner from "components/full-spinner";
 import Prompt from "./prompt";
 import Evaluate from "./evaluate";
 import Menu from "./components/menu";
+import History from "./components/history";
 
 export type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -87,13 +88,11 @@ export default function PromptDetailsPage() {
         <div className="flex items-center">
           <Name value={name} onValueChange={setName} promptId={promptId} />
 
-          {activeVersionId && (
-            <div className="bg-default-100 rounded-lg px-2 py-1 flex justify-center items-center mr-2">
-              <span className="text-xs font-bold">
-                v{versions.find((v) => v.id === activeVersionId)?.number}
-              </span>
-            </div>
-          )}
+          <History
+            versions={versions}
+            activeVersionId={activeVersionId}
+            setActiveVersionId={setActiveVersionId}
+          />
 
           {dirty && (
             <div className="bg-default-100 text-default-600 rounded-lg px-2 py-1 flex justify-center items-center">
@@ -105,14 +104,21 @@ export default function PromptDetailsPage() {
         </div>
 
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Tabs
+          <Tooltip
             size="sm"
-            selectedKey={activeTab}
-            onSelectionChange={(key) => setActiveTab(key as string)}
+            content="Save your prompt to enable evaluations."
+            placement="right"
+            isDisabled={!dirty}
           >
-            <Tab key="prompt" title="Prompt" />
-            <Tab key="evaluate" title="Evaluate" isDisabled={dirty} />
-          </Tabs>
+            <Tabs
+              size="sm"
+              selectedKey={activeTab}
+              onSelectionChange={(key) => setActiveTab(key as string)}
+            >
+              <Tab key="prompt" title="Prompt" />
+              <Tab key="evaluate" title="Evaluate" isDisabled={dirty} />
+            </Tabs>
+          </Tooltip>
         </div>
       </div>
       {activeTab === "prompt" && (
@@ -127,12 +133,7 @@ export default function PromptDetailsPage() {
         />
       )}
       {activeTab === "evaluate" && (
-        <Evaluate
-          activeVersionId={activeVersionId}
-          setActiveVersionId={setActiveVersionId}
-          versions={versions}
-          setVersions={setVersions}
-        />
+        <Evaluate activeVersionId={activeVersionId} versions={versions} />
       )}
     </div>
   );

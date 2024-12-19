@@ -1,41 +1,50 @@
 import {
   Button,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
   useDisclosure,
   Card,
   CardBody,
   Chip,
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerBody,
 } from "@nextui-org/react";
-import { LuHistory } from "react-icons/lu";
 import { Version } from "../route";
 import { formatDistanceToNow } from "date-fns";
 
 export default function History({
   versions,
+  activeVersionId,
   setActiveVersionId,
 }: {
   versions: Version[];
+  activeVersionId: string | null;
   setActiveVersionId: (id: string) => void;
 }) {
   const { isOpen, onOpenChange, onOpen, onClose } = useDisclosure();
 
   return (
     <>
-      <Button size="sm" isIconOnly onPress={onOpen} variant="light">
-        <LuHistory className="w-4 h-4" />
+      <Button
+        size="sm"
+        isIconOnly
+        onPress={onOpen}
+        variant="flat"
+        className="h-6"
+      >
+        <span className="text-xs font-bold">
+          v{versions.find((v) => v.id === activeVersionId)?.number}
+        </span>
       </Button>
-      <Modal
+      <Drawer
         isOpen={isOpen}
         onOpenChange={onOpenChange}
         backdrop="blur"
         scrollBehavior="inside"
       >
-        <ModalContent>
-          <ModalHeader>Version History</ModalHeader>
-          <ModalBody>
+        <DrawerContent>
+          <DrawerHeader>Version History</DrawerHeader>
+          <DrawerBody>
             <div className="space-y-4 pb-4">
               {versions.map((v) => (
                 <Card
@@ -64,9 +73,9 @@ export default function History({
                 </Card>
               ))}
             </div>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </>
   );
 }

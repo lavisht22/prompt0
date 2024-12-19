@@ -13,20 +13,12 @@ import {
   Alert,
 } from "@nextui-org/react";
 import { Version } from "./route";
-import {
-  useMemo,
-  useCallback,
-  useState,
-  useEffect,
-  Dispatch,
-  SetStateAction,
-} from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
 import supabase from "utils/supabase";
 import { Json } from "supabase/functions/types";
 import toast from "react-hot-toast";
 import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
 import AddVariablesDialog from "./components/add-variables-dialog";
-import History from "./components/history";
 import Response from "./components/response";
 import { z } from "zod";
 import { extractVaraiblesFromMessages } from "utils/variables";
@@ -47,12 +39,9 @@ type Evaluation = {
 export default function Evaluate({
   versions,
   activeVersionId,
-  setActiveVersionId,
 }: {
   activeVersionId: string | null;
-  setActiveVersionId: Dispatch<SetStateAction<string | null>>;
   versions: Version[];
-  setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
   const { activeWorkspace } = useWorkspacesStore();
 
@@ -392,7 +381,6 @@ export default function Evaluate({
         </div>
       </div>
       <div className="flex items-center absolute right-3 top-0 h-12">
-        <History versions={versions} setActiveVersionId={setActiveVersionId} />
         <Button
           className="ml-2"
           size="sm"
