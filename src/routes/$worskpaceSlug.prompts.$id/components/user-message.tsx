@@ -51,101 +51,140 @@ export default function UserMessage({
   return (
     <Card className={cn(isInvalid && "bg-danger-50")}>
       <CardBody className="gap-0">
-        <Chip size="sm" variant="flat" color="primary">
-          USER
-        </Chip>
+        <div>
+          <Chip size="sm" variant="flat" color="primary">
+            USER
+          </Chip>
+        </div>
 
         <div className="mb-4">
           {value.content.map((part, index) => {
-            if (part.type === "text") {
-              return (
-                <div
-                  key={index}
-                  className="py-4 border-b-2 border-dashed flex flex-col gap-2"
-                >
-                  <Textarea
-                    aria-label="User message"
-                    variant="bordered"
-                    placeholder="Enter text"
-                    value={part.text}
-                    onChange={(e) => {
-                      const newContent = [...value.content];
-                      newContent[index] = {
-                        type: "text",
-                        text: e.target.value,
-                      };
-                      onValueChange({
-                        ...value,
-                        content: newContent,
-                      });
-                    }}
-                    minRows={3}
-                    maxRows={100000}
-                  />
-                  <VariablesList
-                    text={part.text}
-                    variableValues={variableValues}
-                    openVariablesDialog={openVariablesDialog}
-                  />
-                </div>
-              );
-            }
+            return (
+              <div
+                key={index}
+                className="py-4 border-b-2 flex flex-col gap-2 relative"
+              >
+                {/* <div className="flex justify-between items-center px-2">
+                  <span className="block text-xs font-medium">
+                    {part.type === "text" ? "Text Part" : "Image Part"}
+                  </span>
 
-            if (part.type === "image_url") {
-              return (
-                <div
-                  key={index}
-                  className="py-4 border-b-2 border-dashed flex flex-col gap-2"
-                >
-                  <Input
-                    label="URL"
-                    value={part.image_url.url}
-                    onChange={(e) => {
-                      const newContent = [...value.content];
-                      newContent[index] = {
-                        type: "image_url",
-                        image_url: {
-                          url: e.target.value,
-                          detail: part.image_url.detail,
-                        },
-                      };
-                      onValueChange({
-                        ...value,
-                        content: newContent,
-                      });
-                    }}
-                  />
-
-                  <RadioGroup
-                    className="px-2"
+                  <Button
+                    variant="light"
                     size="sm"
-                    label="Detail"
-                    orientation="horizontal"
-                    value={part.image_url.detail}
-                    onValueChange={(newValue: string) => {
-                      const newContent = [...value.content];
-                      newContent[index] = {
-                        ...part,
-                        image_url: {
-                          ...part.image_url,
-                          detail: newValue as "auto" | "low" | "high",
-                        },
-                      };
-                      onValueChange({ ...value, content: newContent });
+                    isIconOnly
+                    radius="full"
+                    onPress={() => {
+                      const newContent = value.content.filter(
+                        (_, i) => i !== index
+                      );
+                      onValueChange({
+                        ...value,
+                        content: newContent,
+                      });
                     }}
                   >
-                    <Radio value="auto">Auto</Radio>
-                    <Radio value="low">Low</Radio>
-                    <Radio value="high">High</Radio>
-                  </RadioGroup>
-                  <VariablesList
-                    text={part.image_url.url}
-                    variableValues={variableValues}
-                    openVariablesDialog={openVariablesDialog}
-                  />
+                    <LuX className="w-4 h-4" />
+                  </Button>
+                </div> */}
+                {part.type === "text" && (
+                  <>
+                    <Textarea
+                      aria-label="User message"
+                      variant="bordered"
+                      placeholder="Enter text"
+                      value={part.text}
+                      onChange={(e) => {
+                        const newContent = [...value.content];
+                        newContent[index] = {
+                          type: "text",
+                          text: e.target.value,
+                        };
+                        onValueChange({
+                          ...value,
+                          content: newContent,
+                        });
+                      }}
+                      minRows={3}
+                      maxRows={100000}
+                    />
+                    <VariablesList
+                      text={part.text}
+                      variableValues={variableValues}
+                      openVariablesDialog={openVariablesDialog}
+                    />
+                  </>
+                )}
+                {part.type === "image_url" && (
+                  <>
+                    <Input
+                      label="URL"
+                      value={part.image_url.url}
+                      onChange={(e) => {
+                        const newContent = [...value.content];
+                        newContent[index] = {
+                          type: "image_url",
+                          image_url: {
+                            url: e.target.value,
+                            detail: part.image_url.detail,
+                          },
+                        };
+                        onValueChange({
+                          ...value,
+                          content: newContent,
+                        });
+                      }}
+                    />
+
+                    <RadioGroup
+                      className="px-2"
+                      size="sm"
+                      label="Detail"
+                      orientation="horizontal"
+                      value={part.image_url.detail}
+                      onValueChange={(newValue: string) => {
+                        const newContent = [...value.content];
+                        newContent[index] = {
+                          ...part,
+                          image_url: {
+                            ...part.image_url,
+                            detail: newValue as "auto" | "low" | "high",
+                          },
+                        };
+                        onValueChange({ ...value, content: newContent });
+                      }}
+                    >
+                      <Radio value="auto">Auto</Radio>
+                      <Radio value="low">Low</Radio>
+                      <Radio value="high">High</Radio>
+                    </RadioGroup>
+                    <VariablesList
+                      text={part.image_url.url}
+                      variableValues={variableValues}
+                      openVariablesDialog={openVariablesDialog}
+                    />
+                  </>
+                )}
+                <div className="flex flex-row justify-end gap-2">
+                  {value.content.length > 1 && (
+                    <Button
+                      variant="light"
+                      color="danger"
+                      size="sm"
+                      startContent={<LuTrash2 className="size-4" />}
+                      onPress={() => {
+                        const newContent = value.content.filter(
+                          (_, i) => i !== index
+                        );
+                        onValueChange({ ...value, content: newContent });
+                      }}
+                    >
+                      Remove Part
+                    </Button>
+                  )}
                 </div>
-              );
-            }
+              </div>
+            );
           })}
         </div>
 
@@ -185,7 +224,7 @@ export default function UserMessage({
           </Button>
         </div>
 
-        <div className="absolute top-0 right-0">
+        <div className="absolute top-1 right-1">
           <Button
             variant="light"
             color="danger"
