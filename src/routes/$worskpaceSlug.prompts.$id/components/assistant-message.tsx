@@ -47,13 +47,13 @@ export default function AssistantMessage({
           ASSISTANT
         </Chip>
 
-        {value.content && (
+        {typeof value.content === "string" && (
           <Textarea
             variant="bordered"
             className="mb-2"
             aria-label="Assistant message"
             placeholder="Enter assistant message..."
-            minRows={1}
+            minRows={3}
             maxRows={100000}
             value={value.content}
             onChange={(e) =>
@@ -78,7 +78,7 @@ export default function AssistantMessage({
           variableValues={variableValues}
           openVariablesDialog={openVariablesDialog}
         />
-        <div className="absolute top-0 right-0">
+        <div className="absolute top-1 right-1">
           <Button
             variant="light"
             color="danger"
