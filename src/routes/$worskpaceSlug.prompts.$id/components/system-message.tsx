@@ -54,7 +54,7 @@ export default function SystemMessage({
           />
         </div>
 
-        <div className="absolute top-0 right-0">
+        <div className="absolute top-1 right-1">
           <Button variant="light" size="sm" isIconOnly radius="full">
             <LuInfo className="w-4 h-4" />
           </Button>

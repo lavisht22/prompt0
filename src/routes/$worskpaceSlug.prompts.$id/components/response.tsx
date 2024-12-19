@@ -9,9 +9,11 @@ import { Editor } from "@monaco-editor/react";
 export default function Response({
   type,
   value,
+  maxRows = 100000,
 }: {
   value: z.infer<typeof AssistantMessageSchema>;
   type: string;
+  maxRows?: number;
 }) {
   const { theme } = useTheme();
 
@@ -44,7 +46,7 @@ export default function Response({
               variant="bordered"
               readOnly
               minRows={1}
-              maxRows={100000}
+              maxRows={maxRows}
               value={value.content}
             />
           )}

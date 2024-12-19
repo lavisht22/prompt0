@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Button,
   Table,
@@ -8,6 +9,8 @@ import {
   TableCell,
   getKeyValue,
   useDisclosure,
+  Spinner,
+  Alert,
 } from "@nextui-org/react";
 import { Version } from "./route";
 import {
@@ -24,15 +27,26 @@ import toast from "react-hot-toast";
 import { LuPlay, LuPlus, LuTrash2 } from "react-icons/lu";
 import AddVariablesDialog from "./components/add-variables-dialog";
 import History from "./components/history";
-import { Evaluation } from "./types";
 import Response from "./components/response";
 import { z } from "zod";
+import { extractVaraiblesFromMessages } from "utils/variables";
+import { FormValues } from "routes/$worskpaceSlug.prompts.$id/prompt";
 import { AssistantMessageSchema } from "./components/assistant-message";
+import { stream } from "fetch-event-stream";
+import useWorkspacesStore from "stores/workspaces";
+import { ResponseDelta } from "./types";
+
+type Evaluation = {
+  id: string;
+  version_id: string;
+  variables: { [key: string]: string };
+  response: z.infer<typeof AssistantMessageSchema> | null;
+  created_at: string;
+};
 
 export default function Evaluate({
-  activeVersionId,
   versions,
-  setVersions,
+  activeVersionId,
   setActiveVersionId,
 }: {
   activeVersionId: string | null;
@@ -40,10 +54,10 @@ export default function Evaluate({
   versions: Version[];
   setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
+  const { activeWorkspace } = useWorkspacesStore();
+
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
-  const [runningRowIndexes, setRunningRowIndexes] = useState<Set<number>>(
-    new Set()
-  );
+  const [runningRows, setRunningRows] = useState<Set<string>>(new Set());
   const [runningAll, setRunningAll] = useState(false);
   const { isOpen, onOpenChange } = useDisclosure();
 
@@ -52,221 +66,249 @@ export default function Evaluate({
   }, [activeVersionId, versions]);
 
   useEffect(() => {
-    if (activeVersion) {
-      setEvaluations(activeVersion.evaluations as unknown as Evaluation[]);
-    }
+    if (!activeVersionId) return;
+
+    const fetchEvaluations = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("evaluations")
+          .select("*")
+          .eq("version_id", activeVersionId)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        setEvaluations(data as Evaluation[]);
+      } catch {
+        toast.error("Unable to fetch evaluations");
+      }
+    };
+
+    fetchEvaluations();
+  }, [activeVersionId]);
+
+  const params = useMemo(() => {
+    return activeVersion?.params as unknown as {
+      messages: FormValues["messages"];
+    };
   }, [activeVersion]);
 
   const columns = useMemo(() => {
-    const allVariables = new Set<string>();
-
-    evaluations.forEach((evaluation) => {
-      Object.keys(evaluation.variables).forEach((key) => allVariables.add(key));
-    });
+    const allVariables = extractVaraiblesFromMessages(params.messages);
 
     return [
-      ...Array.from(allVariables).map((variable) => ({
+      ...allVariables.map((variable) => ({
         key: variable,
         label: `{{${variable}}}`,
       })),
-      { key: "response", label: "Response" },
-      { key: "actions", label: "Actions" }, // New column
     ];
-  }, [evaluations]);
+  }, [params.messages]);
 
   const rows = useMemo(
     () =>
-      evaluations.map((evaluation, index) => ({
-        key: index.toString(),
+      evaluations.map((evaluation) => ({
+        key: evaluation.id,
         ...evaluation.variables,
-        response: evaluation.response || null, // Change '-' to null
-        actions: null, // Add this line for the new column
+        response: evaluation.response || null,
+        actions: null,
       })),
     [evaluations]
   );
 
-  const evaluate = useCallback(
-    async (variables: { [key: string]: string }) => {
-      if (!activeVersion) {
-        throw new Error("No active version");
-      }
-
-      const response = await fetch(
-        "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            prompt_id: activeVersion.prompt_id,
-            version_id: activeVersion.id,
-            stream: false,
-            variables,
-          }),
-          headers: {
-            Authorization: `Bearer ${
-              import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
-            }`,
-          },
-        }
-      ).then((res) => res.json());
-
-      return response.message;
-    },
-    [activeVersion]
-  );
-
-  const updateVersion = useCallback(
-    async (newEvaluations: Evaluation[]) => {
+  const updateEvaluation = useCallback(
+    async (id: string, response: unknown) => {
       try {
-        if (!activeVersion) return;
-
-        const { data, error } = await supabase
-          .from("versions")
-          .update({
-            evaluations: newEvaluations as unknown as Json,
-          })
-          .eq("id", activeVersion.id)
-          .select()
-          .single();
+        const { error } = await supabase
+          .from("evaluations")
+          .update({ response: response as Json })
+          .eq("id", id);
 
         if (error) {
           throw error;
         }
-
-        setVersions((prev) =>
-          prev.map((v) => (v.id === activeVersion.id ? data : v))
+      } catch {
+        toast.error(
+          "Oops! Something went wrong while updating the evaluation."
         );
-      } catch (error) {
-        console.error("Error updating version:", error);
-        toast.error("Oops! Something went wrong while updating the version.");
       }
     },
-    [activeVersion, setVersions]
+    []
   );
 
   const handleRunSingle = useCallback(
-    async (rowIndex: number) => {
-      if (!activeVersion) return;
+    async (id: string) => {
+      if (!activeVersion || !activeWorkspace) return;
 
       try {
-        const evaluation = evaluations[rowIndex];
+        setRunningRows((prev) => new Set([...prev, id]));
+        const evaluation = evaluations.find((e) => e.id === id);
 
-        setRunningRowIndexes((prev) => new Set([...prev, rowIndex]));
+        if (!evaluation) {
+          throw new Error("Evaluation not found");
+        }
 
-        const response = await evaluate(evaluation.variables);
-
-        const updatedEvaluations = evaluations.map((e, i) =>
-          i === rowIndex ? { ...e, response } : e
+        const events = await stream(
+          "https://glzragfkzcvgpipkgyrq.supabase.co/functions/v1/run",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              provider_id: activeVersion.provider_id,
+              workspace_id: activeWorkspace.id,
+              prompt: activeVersion.params,
+              stream: true,
+              variables: evaluation.variables,
+            }),
+            headers: {
+              Authorization: `Bearer ${
+                import.meta.env.VITE_SUPABASE_ANON_KEY! || ""
+              }`,
+            },
+          }
         );
 
-        setEvaluations(updatedEvaluations);
+        const responseCp: z.infer<typeof AssistantMessageSchema> = {
+          role: "assistant",
+          content: null,
+          tool_calls: null,
+        };
 
-        await updateVersion(updatedEvaluations);
+        for await (const event of events) {
+          if (!event.data) {
+            continue;
+          }
+
+          const data = JSON.parse(event.data) as ResponseDelta;
+
+          if (data.delta.content) {
+            if (!responseCp.content) {
+              responseCp.content = "";
+            }
+
+            responseCp.content += data.delta.content;
+          }
+
+          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+            if (!responseCp.tool_calls) {
+              responseCp.tool_calls = [];
+            }
+
+            data.delta.tool_calls.forEach((tc) => {
+              const prevIndex = responseCp.tool_calls?.findIndex(
+                (t) => t.index === tc.index
+              );
+
+              if (prevIndex === -1 || prevIndex === undefined) {
+                responseCp.tool_calls?.push({
+                  index: tc.index,
+                  id: tc.id ?? "",
+                  type: tc.type ?? "function",
+                  function: {
+                    name: tc.function.name ?? "",
+                    arguments: tc.function.arguments,
+                  },
+                });
+              } else {
+                responseCp.tool_calls![prevIndex].function.arguments +=
+                  tc.function.arguments;
+              }
+            });
+          }
+
+          setEvaluations((prev) =>
+            prev.map((e) => (e.id === id ? { ...e, response: responseCp } : e))
+          );
+
+          await updateEvaluation(id, responseCp);
+        }
       } catch (error) {
         console.error("Error running evaluation:", error);
         toast.error("Oops! Something went wrong while running the evaluation.");
       } finally {
-        setRunningRowIndexes((prev) => {
-          prev.delete(rowIndex);
+        setRunningRows((prev) => {
+          prev.delete(id);
           return prev;
         });
       }
     },
-    [activeVersion, evaluate, evaluations, updateVersion]
+    [activeVersion, activeWorkspace, evaluations, updateEvaluation]
   );
 
-  const handleDeleteEvaluation = useCallback(
-    async (index: number) => {
+  const handleDeleteRow = useCallback(
+    async (id: string) => {
       if (!activeVersion) return;
 
-      const evaluationsCp = [...evaluations];
-      const updatedEvaluations = evaluations.filter((_, i) => i !== index);
-      setEvaluations(updatedEvaluations);
-
       try {
-        const { data, error } = await supabase
-          .from("versions")
-          .update({ evaluations: updatedEvaluations as unknown as Json })
-          .eq("id", activeVersion.id)
-          .select()
-          .single();
+        const { error } = await supabase
+          .from("evaluations")
+          .delete()
+          .eq("id", id);
 
         if (error) {
           throw error;
         }
 
-        setVersions((prev) =>
-          prev.map((v) => (v.id === activeVersion.id ? data : v))
-        );
+        setEvaluations((prev) => prev.filter((e) => e.id !== id));
       } catch {
         toast.error("Failed to delete evaluation");
-        setEvaluations(evaluationsCp);
       }
     },
-    [activeVersion, evaluations, setVersions]
+    [activeVersion]
   );
 
   const handleAddRow = useCallback(
     async (values: Record<string, string>) => {
       if (!activeVersion) return;
 
-      const updatedEvaluations = [
-        ...evaluations,
-        {
+      const { data, error } = await supabase
+        .from("evaluations")
+        .insert({
+          version_id: activeVersion.id,
           variables: values,
-          response: null,
-          created_at: new Date().toISOString(),
-        },
-      ];
+        })
+        .select()
+        .single();
 
-      setEvaluations(updatedEvaluations);
+      if (error) {
+        throw error;
+      }
 
-      await updateVersion(updatedEvaluations);
+      setEvaluations((prev) => [...prev, data as Evaluation]);
     },
-    [activeVersion, evaluations, updateVersion]
+    [activeVersion]
   );
 
   const handleRunRemaining = useCallback(async () => {
     try {
       setRunningAll(true);
-
-      const updatedEvaluations = await Promise.all(
-        evaluations.map(async (evaluation, index) => {
-          if (evaluation.response === null) {
-            setRunningRowIndexes((prev) => new Set([...prev, index]));
-            const response = await evaluate(evaluation.variables);
-            setRunningRowIndexes((prev) => {
-              prev.delete(index);
-              return prev;
-            });
-
-            setEvaluations((prev) =>
-              prev.map((e, i) => (i === index ? { ...e, response } : e))
-            );
-
-            return {
-              ...evaluation,
-              response,
-            };
-          }
-
-          return evaluation;
-        })
+      const pendingEvaluations = evaluations.filter(
+        (e) => e.response === null && !runningRows.has(e.id)
       );
 
-      setEvaluations(updatedEvaluations);
-
-      await updateVersion(updatedEvaluations);
-    } catch (error) {
-      console.error("Error running all evaluations:", error);
+      await Promise.all(
+        pendingEvaluations.map(async (evaluation) => {
+          await handleRunSingle(evaluation.id);
+        })
+      );
+    } catch {
       toast.error("Oops! Something went wrong while running the evaluations.");
     } finally {
       setRunningAll(false);
     }
-  }, [evaluate, evaluations, updateVersion]);
+  }, [evaluations, handleRunSingle, runningRows]);
 
   return (
     <>
-      <div className="flex-1 overflow-hidden flex flex-col ">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="px-4 pt-4">
+          {columns.length === 0 && (
+            <Alert
+              color="warning"
+              title={`You have not added any variables to this prompt`}
+            />
+          )}
+        </div>
         <div className="flex-1 overflow-y-auto relative">
           <Table
             aria-label="Evaluations table"
@@ -284,59 +326,67 @@ export default function Evaluate({
               </div>
             }
           >
-            <TableHeader columns={columns}>
-              {(column) => (
-                <TableColumn key={column.key}>{column.label}</TableColumn>
-              )}
+            <TableHeader>
+              {
+                columns.map((column) => (
+                  <TableColumn key={column.key} width={150}>
+                    {column.label}
+                  </TableColumn>
+                )) as any
+              }
+              <TableColumn key="response">Response</TableColumn>
+              <TableColumn width={10} key="actions">
+                Actions
+              </TableColumn>
             </TableHeader>
             <TableBody items={rows}>
-              {(item) => (
-                <TableRow key={item.key} className="border-b">
-                  {(columnKey) => (
-                    <TableCell>
-                      {columnKey === "response" && item[columnKey] === null ? (
-                        <Button
-                          size="sm"
-                          startContent={<LuPlay />}
-                          onClick={() => handleRunSingle(Number(item.key))}
-                          isLoading={runningRowIndexes.has(Number(item.key))}
-                        >
-                          Run
-                        </Button>
-                      ) : columnKey === "actions" ? (
-                        <Button
-                          color="danger"
-                          variant="light"
-                          size="sm"
-                          isIconOnly
-                          onClick={() =>
-                            handleDeleteEvaluation(Number(item.key))
-                          }
-                        >
-                          <LuTrash2 />
-                        </Button>
-                      ) : (
-                        <>
-                          {columnKey === "response" ? (
-                            <div className="space-y-2">
-                              <Response
-                                type="text"
-                                value={
-                                  item.response as z.infer<
-                                    typeof AssistantMessageSchema
-                                  >
-                                }
-                              />
-                            </div>
-                          ) : (
-                            getKeyValue(item, columnKey)
-                          )}
-                        </>
-                      )}
-                    </TableCell>
-                  )}
+              {rows.map((row) => (
+                <TableRow>
+                  {
+                    columns.map((column) => (
+                      <TableCell key={column.key} width={150}>
+                        {getKeyValue(row, column.key)}
+                      </TableCell>
+                    )) as any
+                  }
+
+                  <TableCell key="response">
+                    {runningRows.has(row.key) && row.response === null ? (
+                      <Spinner size="sm" />
+                    ) : row.response === null ? (
+                      <Button
+                        size="sm"
+                        startContent={<LuPlay />}
+                        onPress={() => handleRunSingle(row.key)}
+                        isDisabled={runningRows.has(row.key)}
+                      >
+                        Run
+                      </Button>
+                    ) : (
+                      <Response
+                        type="text"
+                        value={
+                          row.response as z.infer<typeof AssistantMessageSchema>
+                        }
+                        maxRows={10}
+                      />
+                    )}
+                  </TableCell>
+
+                  <TableCell key="actions" width={10} className="text-center">
+                    <Button
+                      color="danger"
+                      variant="light"
+                      size="sm"
+                      isIconOnly
+                      onPress={() => handleDeleteRow(row.key)}
+                      isDisabled={runningRows.has(row.key)}
+                    >
+                      <LuTrash2 />
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>

@@ -17,7 +17,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "types": "npx supabase gen types typescript --linked > supabase/functions/types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

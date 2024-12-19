@@ -48,7 +48,7 @@ import Deploy from "./components/deploy";
 import History from "./components/history";
 import { Version } from "./route";
 import { ToolSchema } from "./components/tool";
-import { Evaluation, ResponseDelta } from "./types";
+import { ResponseDelta } from "./types";
 import Tools from "./components/tools";
 
 const MessageSchema = z.union([
@@ -140,10 +140,6 @@ export default function Prompt({
     return versions.find((v) => v.id === activeVersionId) || null;
   }, [activeVersionId, versions]);
 
-  const evaluations = useMemo(() => {
-    return (activeVersion?.evaluations as unknown as Evaluation[]) || [];
-  }, [activeVersion]);
-
   const methods = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -169,14 +165,6 @@ export default function Prompt({
     }
   }, [activeVersion, methods]);
 
-  useEffect(() => {
-    const lastEvaluation = evaluations[evaluations.length - 1];
-
-    if (lastEvaluation) {
-      setVariableValues(new Map(Object.entries(lastEvaluation.variables)));
-    }
-  }, [evaluations]);
-
   const run = useCallback(
     async (values: FormValues) => {
       try {
@@ -185,6 +173,7 @@ export default function Prompt({
         }
 
         const provider_id = values.provider_id;
+
         const prompt = {
           messages: values.messages,
           tools: values.tools,
@@ -323,22 +312,6 @@ export default function Prompt({
             promptIdToBeUsed = createdPrompt.id;
           }
 
-          // // Determine which evaluations to copy over from previous version
-          // const prevEvaluations = copyEvaluations(
-          //   evaluations,
-          //   cleanedVariables
-          // );
-
-          // evaluationsToAdd = addEvaluation(prevEvaluations, {
-          //   variables: Object.fromEntries(cleanedVariables),
-          //   response: {
-          //     role: "assistant",
-          //     content: null,
-          //     tool_calls: null,
-          //   },
-          //   created_at: new Date().toISOString(),
-          // });
-
           const number = Math.max(...versions.map((v) => v.number), 0) + 1;
 
           const { data, error } = await supabase
@@ -360,7 +333,6 @@ export default function Prompt({
                 temperature: values.temperature,
                 response_format: values.response_format,
               },
-              // evaluations: evaluationsToAdd as unknown as Json,
             })
             .select()
             .single();
