@@ -21,7 +21,11 @@ export default function Menu({ promptId }: { promptId: string }) {
           </Button>
         </DropdownTrigger>
         <DropdownMenu>
-          <DropdownItem color="danger" onPress={() => setDeleteOpen(true)}>
+          <DropdownItem
+            key="delete"
+            color="danger"
+            onPress={() => setDeleteOpen(true)}
+          >
             Delete
           </DropdownItem>
         </DropdownMenu>
