@@ -11,6 +11,7 @@ import {
   useDisclosure,
   Spinner,
   Alert,
+  Textarea,
 } from "@nextui-org/react";
 import { Version } from "./route";
 import { useMemo, useCallback, useState, useEffect } from "react";
@@ -333,8 +334,13 @@ export default function Evaluate({
                 <TableRow>
                   {
                     columns.map((column) => (
-                      <TableCell key={column.key} width={150}>
-                        {getKeyValue(row, column.key)}
+                      <TableCell key={column.key} width={250}>
+                        <Textarea
+                          readOnly
+                          value={getKeyValue(row, column.key)}
+                          minRows={1}
+                          maxRows={10}
+                        />
                       </TableCell>
                     )) as any
                   }
