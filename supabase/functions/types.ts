@@ -74,6 +74,7 @@ export type Database = {
           created_at: string
           id: string
           response: Json | null
+          updated_at: string
           variables: Json
           version_id: string
         }
@@ -81,6 +82,7 @@ export type Database = {
           created_at?: string
           id?: string
           response?: Json | null
+          updated_at?: string
           variables: Json
           version_id: string
         }
@@ -88,6 +90,7 @@ export type Database = {
           created_at?: string
           id?: string
           response?: Json | null
+          updated_at?: string
           variables?: Json
           version_id?: string
         }
@@ -399,6 +402,13 @@ export type Database = {
         Args: {
           user_id: string
           provider_id: string
+        }
+        Returns: boolean
+      }
+      is_version_reader: {
+        Args: {
+          user_id: string
+          version_id: string
         }
         Returns: boolean
       }

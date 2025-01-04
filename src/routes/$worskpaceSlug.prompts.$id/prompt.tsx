@@ -50,6 +50,7 @@ import { ToolSchema } from "./components/tool";
 import { ResponseDelta } from "./types";
 import Tools from "./components/tools";
 import { Database } from "supabase/functions/types";
+import { deepEqual, hasAllVariables } from "utils/variables";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -172,10 +173,15 @@ export default function Prompt({
         setEvaluations(data);
 
         if (variableValues.size === 0 && data.length > 0) {
-          const last = data[data.length - 1];
+          const lastUpdated = data.sort((a, b) => {
+            return (
+              new Date(b.updated_at).getTime() -
+              new Date(a.updated_at).getTime()
+            );
+          })[0];
 
           setVariableValues(
-            new Map(Object.entries(last.variables as object)) as Map<
+            new Map(Object.entries(lastUpdated.variables as object)) as Map<
               string,
               string
             >
@@ -215,49 +221,68 @@ export default function Prompt({
           throw new Error("No active version id");
         }
 
-        if (methods.formState.isDirty) {
-          throw new Error("Form is dirty");
-        }
-
         const existingEvaluation = evaluations.find((e) =>
-          Object.entries(e.variables as object).every(
-            ([key, value]) => variables.get(key) === value
-          )
+          deepEqual(e.variables, Object.fromEntries(variables))
         );
 
-        if (existingEvaluation) {
-          const { data, error } = await supabase
-            .from("evaluations")
-            .update({
-              response,
-            })
-            .eq("id", existingEvaluation.id)
-            .select()
-            .single();
-
-          if (error) {
-            throw error;
+        if (methods.formState.isDirty) {
+          if (existingEvaluation) {
+            setEvaluations((prev) =>
+              prev.map((e) =>
+                e.id === existingEvaluation.id
+                  ? { ...e, id: `create_${e.id}`, response }
+                  : e
+              )
+            );
+          } else {
+            setEvaluations((prev) => [
+              ...prev,
+              {
+                id: `create_${crypto.randomUUID()}`,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                version_id: activeVersionId,
+                variables: Object.fromEntries(variables),
+                response,
+              },
+            ]);
           }
-
-          setEvaluations(
-            evaluations.map((e) => (e.id === existingEvaluation.id ? data : e))
-          );
         } else {
-          const { data, error } = await supabase
-            .from("evaluations")
-            .insert({
-              version_id: activeVersionId,
-              variables: Object.fromEntries(variables),
-              response,
-            })
-            .select()
-            .single();
+          if (existingEvaluation) {
+            const { data, error } = await supabase
+              .from("evaluations")
+              .update({
+                response,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingEvaluation.id)
+              .select()
+              .single();
 
-          if (error) {
-            throw error;
+            if (error) {
+              throw error;
+            }
+
+            setEvaluations((prev) =>
+              prev.map((e) => (e.id === existingEvaluation.id ? data : e))
+            );
+          } else {
+            const { data, error } = await supabase
+              .from("evaluations")
+              .insert({
+                version_id: activeVersionId,
+                variables: Object.fromEntries(variables),
+                response,
+              })
+              .select()
+              .single();
+
+            if (error) {
+              throw error;
+            }
+
+            setEvaluations((prev) => [...prev, data]);
           }
-
-          setEvaluations([data, ...evaluations]);
         }
       } catch (error) {
         console.error(error);
@@ -444,18 +469,20 @@ export default function Prompt({
             throw error;
           }
 
-          if (response.content || response.tool_calls) {
-            const { error: evalError } = await supabase
-              .from("evaluations")
-              .insert({
-                version_id: data.id,
-                variables: Object.fromEntries(variableValues),
-                response: response,
-              });
+          const variables = Array.from(variableValues.keys());
 
-            if (evalError) {
-              console.error("Failed to create evaluation:", evalError);
+          for (const evaluation of evaluations) {
+            if (!hasAllVariables(evaluation.variables, variables)) {
+              continue;
             }
+
+            await supabase.from("evaluations").insert({
+              version_id: data.id,
+              variables: evaluation.variables,
+              response: evaluation.id.includes("create_")
+                ? evaluation.response
+                : null,
+            });
           }
 
           setVersions([data, ...versions]);
@@ -481,13 +508,13 @@ export default function Prompt({
       activeWorkspace,
       methods,
       versions,
+      variableValues,
+      evaluations,
       setVersions,
       setActiveVersionId,
       name,
       setName,
       navigate,
-      response,
-      variableValues,
     ]
   );
 

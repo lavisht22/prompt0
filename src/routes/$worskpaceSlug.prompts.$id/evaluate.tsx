@@ -112,7 +112,10 @@ export default function Evaluate({
       try {
         const { error } = await supabase
           .from("evaluations")
-          .update({ response: response as Json })
+          .update({
+            response: response as Json,
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", id);
 
         if (error) {
