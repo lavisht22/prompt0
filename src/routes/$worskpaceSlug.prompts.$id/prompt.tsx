@@ -49,6 +49,7 @@ import { Version } from "./route";
 import { ToolSchema } from "./components/tool";
 import { ResponseDelta } from "./types";
 import Tools from "./components/tools";
+import { Database } from "supabase/functions/types";
 
 const MessageSchema = z.union([
   SystemMessageSchema,
@@ -134,6 +135,9 @@ export default function Prompt({
   const [variableValues, setVariableValues] = useState<Map<string, string>>(
     new Map()
   );
+  const [evaluations, setEvaluations] = useState<
+    Database["public"]["Tables"]["evaluations"]["Row"][]
+  >([]);
 
   const activeVersion = useMemo(() => {
     return versions.find((v) => v.id === activeVersionId) || null;
@@ -147,6 +151,43 @@ export default function Prompt({
       ...(activeVersion?.params as object),
     } as FormValues,
   });
+
+  useEffect(() => {
+    const loadEvaluations = async () => {
+      try {
+        if (!activeVersionId) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("evaluations")
+          .select("*")
+          .eq("version_id", activeVersionId)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        setEvaluations(data);
+
+        if (variableValues.size === 0 && data.length > 0) {
+          const last = data[data.length - 1];
+
+          setVariableValues(
+            new Map(Object.entries(last.variables as object)) as Map<
+              string,
+              string
+            >
+          );
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadEvaluations();
+  }, [activeVersionId, variableValues.size]);
 
   useEffect(() => {
     setDirty(methods.formState.isDirty);
@@ -163,6 +204,67 @@ export default function Prompt({
       } as FormValues);
     }
   }, [activeVersion, methods]);
+
+  const updateEvaluations = useCallback(
+    async (
+      variables: Map<string, string>,
+      response: z.infer<typeof AssistantMessageSchema>
+    ) => {
+      try {
+        if (!activeVersionId) {
+          throw new Error("No active version id");
+        }
+
+        if (methods.formState.isDirty) {
+          throw new Error("Form is dirty");
+        }
+
+        const existingEvaluation = evaluations.find((e) =>
+          Object.entries(e.variables as object).every(
+            ([key, value]) => variables.get(key) === value
+          )
+        );
+
+        if (existingEvaluation) {
+          const { data, error } = await supabase
+            .from("evaluations")
+            .update({
+              response,
+            })
+            .eq("id", existingEvaluation.id)
+            .select()
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          setEvaluations(
+            evaluations.map((e) => (e.id === existingEvaluation.id ? data : e))
+          );
+        } else {
+          const { data, error } = await supabase
+            .from("evaluations")
+            .insert({
+              version_id: activeVersionId,
+              variables: Object.fromEntries(variables),
+              response,
+            })
+            .select()
+            .single();
+
+          if (error) {
+            throw error;
+          }
+
+          setEvaluations([data, ...evaluations]);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    [activeVersionId, evaluations, methods.formState.isDirty]
+  );
 
   const run = useCallback(
     async (values: FormValues) => {
@@ -259,6 +361,8 @@ export default function Prompt({
 
           setResponse({ ...responseCp });
         }
+
+        await updateEvaluations(variableValues, responseCp);
       } catch (error) {
         console.error(error);
         toast.error("Oops! Something went wrong.");
@@ -266,7 +370,7 @@ export default function Prompt({
         setSaving(false);
       }
     },
-    [promptId, activeWorkspace, variableValues]
+    [promptId, activeWorkspace, variableValues, updateEvaluations]
   );
 
   const save = useCallback(
@@ -340,6 +444,20 @@ export default function Prompt({
             throw error;
           }
 
+          if (response.content || response.tool_calls) {
+            const { error: evalError } = await supabase
+              .from("evaluations")
+              .insert({
+                version_id: data.id,
+                variables: Object.fromEntries(variableValues),
+                response: response,
+              });
+
+            if (evalError) {
+              console.error("Failed to create evaluation:", evalError);
+            }
+          }
+
           setVersions([data, ...versions]);
           setActiveVersionId(data.id);
 
@@ -368,6 +486,8 @@ export default function Prompt({
       name,
       setName,
       navigate,
+      response,
+      variableValues,
     ]
   );
 
