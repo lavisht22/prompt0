@@ -212,9 +212,9 @@ export default function Evaluate({
           setEvaluations((prev) =>
             prev.map((e) => (e.id === id ? { ...e, response: responseCp } : e))
           );
-
-          await updateEvaluation(id, responseCp);
         }
+
+        await updateEvaluation(id, responseCp);
       } catch (error) {
         console.error("Error running evaluation:", error);
         toast.error("Oops! Something went wrong while running the evaluation.");
