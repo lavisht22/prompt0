@@ -1,5 +1,5 @@
 import { v4 as uuid } from "https://esm.sh/uuid@10.0.0";
-import { OpenAI } from "https://esm.sh/openai@4.57.0";
+import { OpenAI } from "https://esm.sh/openai@4.79.4";
 
 import { ChatResponse } from "./types.ts";
 import { ErrorResponse, StreamResponse, SuccessResponse } from "./response.ts";
@@ -127,7 +127,7 @@ async function insertLog(
     request,
     response,
     error,
-  });
+  }).throwOnError();
 }
 
 export async function generate(
@@ -200,7 +200,7 @@ export async function generate(
       const response = await client.chat.completions.create({
         ...params,
         stream: true,
-        // stream_options: { include_usage: true },  TODO: Figure out an alternative to this
+        stream_options: { include_usage: true },
       });
 
       const readableStream = new ReadableStream({
@@ -210,39 +210,42 @@ export async function generate(
           }
 
           for await (const chunk of response) {
-            if (chunk.choices.length > 0) {
-              controller.enqueue(
-                encoder.encode(`data: ${
-                  JSON.stringify({
-                    id,
-                    model: chunk.model,
-                    delta: chunk.choices[0].delta,
-                    finish_reason: chunk.choices[0].finish_reason,
-                    prompt_tokens: chunk.usage
-                      ?.prompt_tokens,
-                    completion_tokens: chunk.usage
-                      ?.completion_tokens,
-                  })
-                }\n\n`),
-              );
+            const delta = chunk.choices.length > 0
+              ? chunk.choices[0].delta
+              : undefined;
 
-              constructedResponse.model = chunk.model;
+            const finish_reason = chunk.choices.length > 0
+              ? chunk.choices[0].finish_reason
+              : undefined;
 
-              constructedResponse.message.content = `${
-                constructedResponse.message.content || ""
-              }${chunk.choices[0].delta.content || ""}`;
+            const prompt_tokens = chunk?.usage?.prompt_tokens;
+            const completion_tokens = chunk?.usage?.completion_tokens;
 
-              constructedResponse.message.refusal =
-                chunk.choices[0].delta.refusal || null;
+            controller.enqueue(
+              encoder.encode(`data: ${
+                JSON.stringify({
+                  id,
+                  model: chunk.model,
+                  delta,
+                  finish_reason,
+                  prompt_tokens,
+                  completion_tokens,
+                })
+              }\n\n`),
+            );
 
-              constructedResponse.finish_reason = chunk.choices[0]
-                .finish_reason as string;
+            constructedResponse.model = chunk.model;
 
-              constructedResponse.prompt_tokens = chunk.usage
-                ?.prompt_tokens;
-              constructedResponse.completion_tokens = chunk.usage
-                ?.completion_tokens;
-            }
+            constructedResponse.message.content = `${
+              constructedResponse.message.content || ""
+            }${delta?.content || ""}`;
+
+            constructedResponse.message.refusal = delta?.refusal || null;
+
+            constructedResponse.finish_reason = finish_reason || null;
+
+            constructedResponse.prompt_tokens = prompt_tokens;
+            constructedResponse.completion_tokens = completion_tokens;
           }
 
           await insertLog(
@@ -274,8 +277,6 @@ export async function generate(
           completion_tokens: response.usage?.completion_tokens,
         } as ChatResponse;
       });
-
-      console.log("got response");
 
       await insertLog(
         id,
