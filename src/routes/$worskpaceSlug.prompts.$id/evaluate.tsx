@@ -174,6 +174,10 @@ export default function Evaluate({
 
           const data = JSON.parse(event.data) as ResponseDelta;
 
+          if (!data.delta) {
+            continue;
+          }
+
           if (data.delta.content) {
             if (!responseCp.content) {
               responseCp.content = "";
