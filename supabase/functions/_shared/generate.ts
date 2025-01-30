@@ -1,7 +1,6 @@
 import { v4 as uuid } from "https://esm.sh/uuid@10.0.0";
 import { OpenAI } from "https://esm.sh/openai@4.79.4";
 
-import { ChatResponse } from "./types.ts";
 import { ErrorResponse, StreamResponse, SuccessResponse } from "./response.ts";
 import { Json } from "../types.ts";
 import { serviceClient } from "./supabase.ts";
