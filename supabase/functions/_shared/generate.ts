@@ -123,7 +123,6 @@ async function insertLog(
     id,
     workspace_id,
     version_id,
-    cost: 0,
     request,
     response,
     error,
