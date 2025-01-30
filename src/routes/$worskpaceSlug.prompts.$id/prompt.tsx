@@ -32,6 +32,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
+import OpenAI from "openai";
 
 import useWorkspacesStore from "stores/workspaces";
 
@@ -47,7 +48,6 @@ import { generatePromptName } from "utils/prompt";
 import Deploy from "./components/deploy";
 import { Version } from "./route";
 import { ToolSchema } from "./components/tool";
-import { ResponseDelta } from "./types";
 import Tools from "./components/tools";
 import { Database } from "supabase/functions/types";
 import { deepEqual, hasAllVariables } from "utils/variables";
@@ -347,26 +347,30 @@ export default function Prompt({
             continue;
           }
 
-          const data = JSON.parse(event.data) as ResponseDelta;
+          const data = JSON.parse(
+            event.data
+          ) as OpenAI.Chat.Completions.ChatCompletionChunk;
 
-          if (!data.delta) {
+          if (data.choices.length === 0) {
             continue;
           }
 
-          if (data.delta.content) {
+          const delta = data.choices[0].delta;
+
+          if (delta.content) {
             if (!responseCp.content) {
               responseCp.content = "";
             }
 
-            responseCp.content += data.delta.content;
+            responseCp.content += delta.content;
           }
 
-          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+          if (delta.tool_calls && delta.tool_calls.length > 0) {
             if (!responseCp.tool_calls) {
               responseCp.tool_calls = [];
             }
 
-            data.delta.tool_calls.forEach((tc) => {
+            delta.tool_calls.forEach((tc) => {
               const prevIndex = responseCp.tool_calls?.findIndex(
                 (t) => t.index === tc.index
               );
@@ -377,13 +381,13 @@ export default function Prompt({
                   id: tc.id ?? "",
                   type: tc.type ?? "function",
                   function: {
-                    name: tc.function.name ?? "",
-                    arguments: tc.function.arguments,
+                    name: tc.function?.name ?? "",
+                    arguments: tc.function?.arguments ?? "",
                   },
                 });
               } else {
                 responseCp.tool_calls![prevIndex].function.arguments +=
-                  tc.function.arguments;
+                  tc.function?.arguments ?? "";
               }
             });
           }
