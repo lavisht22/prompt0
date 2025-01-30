@@ -6,8 +6,10 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 import SplashScreen from "components/splash-screen";
 import useWorkspacesStore from "stores/workspaces";
+import { useAuth } from "contexts/auth-context";
 
 export default function WorkspaceLayout() {
+  const { user, updateUserMetadata } = useAuth();
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
 
   const { workspaces, activeWorkspace, setActiveWorkspace } =
@@ -15,7 +17,7 @@ export default function WorkspaceLayout() {
 
   useEffect(() => {
     try {
-      if (workspaces.length === 0) return;
+      if (!user || workspaces.length === 0) return;
 
       if (!workspaceSlug) return;
 
@@ -28,10 +30,13 @@ export default function WorkspaceLayout() {
       }
 
       setActiveWorkspace(activeWorkspace);
+      if (user.user_metadata.last_workspace !== activeWorkspace.slug) {
+        updateUserMetadata({ last_workspace: activeWorkspace.slug });
+      }
     } catch {
       toast.error("Oops! Something went wrong.");
     }
-  }, [setActiveWorkspace, workspaceSlug, workspaces]);
+  }, [setActiveWorkspace, updateUserMetadata, user, workspaceSlug, workspaces]);
 
   if (!activeWorkspace) {
     return <SplashScreen loading />;

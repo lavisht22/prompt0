@@ -81,6 +81,7 @@ export default function Sidebar() {
             if (collapsed) {
               return (
                 <Button
+                  key={link.to}
                   isIconOnly
                   variant={isActive ? "flat" : "light"}
                   href={`/${activeWorkspace?.slug}/${link.to}`}
@@ -92,6 +93,7 @@ export default function Sidebar() {
 
             return (
               <Button
+                key={link.to}
                 fullWidth
                 variant={isActive ? "flat" : "light"}
                 className="animate-appearance-in delay-300 justify-start px-2"

@@ -1,19 +1,28 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { User } from "@supabase/supabase-js";
 import supabase from "../utils/supabase";
-import { useNavigate, useNavigation } from "react-router-dom";
+import { useLocation, useNavigate, useNavigation } from "react-router-dom";
 import SplashScreen from "../components/splash-screen";
 
 interface AuthContextT {
   user: User | null;
   userLoading: boolean;
+  updateUserMetadata: (metadata: Record<string, string>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextT>({
   user: null,
   userLoading: true,
+  updateUserMetadata: () => Promise.resolve(),
 });
 
 export default function AuthProvider({
@@ -23,6 +32,7 @@ export default function AuthProvider({
 }) {
   const navigate = useNavigate();
   const navigation = useNavigation();
+  const location = useLocation();
 
   const [error, setError] = useState<string | null>(null);
 
@@ -50,23 +60,74 @@ export default function AuthProvider({
         });
 
         setUser(user);
-      } catch (error) {
-        console.error(error);
-        setError("Could not load the page at the moment.");
+
+        // Check if the current URL is root, then redirect to a workspace
+        if (location.pathname === "/") {
+          const lastWorkspace = user?.user_metadata.last_workspace as
+            | string
+            | null
+            | undefined;
+
+          if (lastWorkspace) {
+            navigate(`/${lastWorkspace}`);
+            return;
+          }
+
+          const { data, error } = await supabase
+            .from("workspaces")
+            .select("id, slug");
+
+          if (error) {
+            throw error;
+          }
+
+          if (data.length > 0) {
+            navigate(`/${data[0].slug}`);
+          }
+        }
+      } catch {
+        setError("Oops! Something went wrong. Please try again later.");
       } finally {
         setUserLoading(false);
       }
     };
 
     init();
-  }, [navigate, navigation.location?.pathname, setUser]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, setUser]);
+
+  const userMetadata = useRef<Record<string, unknown>>({});
+
+  useEffect(() => {
+    if (!user) return;
+
+    userMetadata.current = user.user_metadata;
+  }, [user]);
+
+  const updateUserMetadata = useCallback(
+    async (metadata: Record<string, string>) => {
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          ...userMetadata.current,
+          ...metadata,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setUser(data.user);
+    },
+    []
+  );
 
   if (error) {
     return <SplashScreen loading={false} error={error} />;
   }
 
   return (
-    <AuthContext.Provider value={{ user, userLoading }}>
+    <AuthContext.Provider value={{ user, userLoading, updateUserMetadata }}>
       {children}
     </AuthContext.Provider>
   );
