@@ -107,7 +107,6 @@ export default function ProviderDetailsPage() {
 
   const save = useCallback(
     async (values: FormValues) => {
-      console.log(values);
       try {
         if (!providerId || !activeWorkspace) {
           return;

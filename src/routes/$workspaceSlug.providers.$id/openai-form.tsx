@@ -5,7 +5,5 @@ export default function OpenAIForm({
   value: any;
   onValueChange: any;
 }) {
-  console.log(value, onValueChange);
-
   return <></>;
 }

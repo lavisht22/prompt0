@@ -50,7 +50,6 @@ Deno.serve(async (req) => {
 
     const after = Date.now();
 
-    console.log("RUNNNNN");
     console.log("Read time", after - before);
 
     return generate(

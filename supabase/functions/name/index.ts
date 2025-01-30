@@ -13,8 +13,6 @@ Deno.serve(async (req) => {
   try {
     const { messages }: { messages: unknown } = await req.json();
 
-    console.log(messages);
-
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [

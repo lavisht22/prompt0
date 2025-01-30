@@ -204,7 +204,6 @@ export default function Params() {
                       );
 
                       if (tool) {
-                        console.log("TOOL AVAILABLE");
                         field.onChange({
                           type: "function",
                           function: {
