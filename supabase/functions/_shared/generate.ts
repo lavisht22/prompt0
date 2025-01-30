@@ -5,6 +5,7 @@ import { ChatResponse } from "./types.ts";
 import { ErrorResponse, StreamResponse, SuccessResponse } from "./response.ts";
 import { Json } from "../types.ts";
 import { serviceClient } from "./supabase.ts";
+import { mergeChunks } from "./merge.ts";
 
 type VariableValues = Record<string, string>;
 
@@ -116,16 +117,19 @@ async function insertLog(
   workspace_id: string,
   version_id: string | null,
   request: unknown,
-  response: unknown,
-  error: unknown,
+  response: unknown | null,
+  prompt_tokens: number | null,
+  completion_tokens: number | null,
+  error: string | null,
 ) {
   await serviceClient.from("logs").insert({
     id,
     workspace_id,
     version_id,
-    cost: 0,
     request,
     response,
+    prompt_tokens,
+    completion_tokens,
     error,
   }).throwOnError();
 }
@@ -184,19 +188,6 @@ export async function generate(
     if (stream) {
       const encoder = new TextEncoder();
 
-      const constructedResponse: ChatResponse = {
-        id,
-        model: "",
-        message: {
-          role: "assistant",
-          content: "",
-          refusal: null,
-        },
-        finish_reason: null,
-        prompt_tokens: undefined,
-        completion_tokens: undefined,
-      };
-
       const response = await client.chat.completions.create({
         ...params,
         stream: true,
@@ -209,51 +200,26 @@ export async function generate(
             return;
           }
 
+          const chunks = [];
+
           for await (const chunk of response) {
-            const delta = chunk.choices.length > 0
-              ? chunk.choices[0].delta
-              : undefined;
-
-            const finish_reason = chunk.choices.length > 0
-              ? chunk.choices[0].finish_reason
-              : undefined;
-
-            const prompt_tokens = chunk?.usage?.prompt_tokens;
-            const completion_tokens = chunk?.usage?.completion_tokens;
+            chunks.push(chunk);
 
             controller.enqueue(
-              encoder.encode(`data: ${
-                JSON.stringify({
-                  id,
-                  model: chunk.model,
-                  delta,
-                  finish_reason,
-                  prompt_tokens,
-                  completion_tokens,
-                })
-              }\n\n`),
+              encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`),
             );
-
-            constructedResponse.model = chunk.model;
-
-            constructedResponse.message.content = `${
-              constructedResponse.message.content || ""
-            }${delta?.content || ""}`;
-
-            constructedResponse.message.refusal = delta?.refusal || null;
-
-            constructedResponse.finish_reason = finish_reason || null;
-
-            constructedResponse.prompt_tokens = prompt_tokens;
-            constructedResponse.completion_tokens = completion_tokens;
           }
+
+          const mergedResponse = mergeChunks(chunks);
 
           await insertLog(
             id,
             version.prompts.workspace_id,
             version.id,
             params,
-            constructedResponse,
+            mergedResponse,
+            mergedResponse?.usage?.prompt_tokens || null,
+            mergedResponse?.usage?.completion_tokens || null,
             null,
           );
 
@@ -266,16 +232,6 @@ export async function generate(
       const response = await client.chat.completions.create({
         ...params,
         stream: false,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      }).then((response: any) => {
-        return {
-          id,
-          model: response.model,
-          message: response.choices[0].message,
-          finish_reason: response.choices[0].finish_reason,
-          prompt_tokens: response.usage?.prompt_tokens,
-          completion_tokens: response.usage?.completion_tokens,
-        } as ChatResponse;
       });
 
       await insertLog(
@@ -284,6 +240,8 @@ export async function generate(
         version.id,
         params,
         response,
+        response.usage?.prompt_tokens || null,
+        response.usage?.completion_tokens || null,
         null,
       );
 
@@ -302,7 +260,9 @@ export async function generate(
       version.id,
       params,
       null,
-      errorResponse,
+      null,
+      null,
+      errorResponse.message,
     );
 
     return ErrorResponse(errorResponse.message);

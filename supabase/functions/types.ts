@@ -135,31 +135,34 @@ export type Database = {
       }
       logs: {
         Row: {
-          cost: number
+          completion_tokens: number | null
           created_at: string
           error: Json | null
           id: string
-          request: Json
+          prompt_tokens: number | null
+          request: Json | null
           response: Json | null
           version_id: string | null
           workspace_id: string
         }
         Insert: {
-          cost: number
+          completion_tokens?: number | null
           created_at?: string
           error?: Json | null
           id?: string
-          request?: Json
+          prompt_tokens?: number | null
+          request?: Json | null
           response?: Json | null
           version_id?: string | null
           workspace_id: string
         }
         Update: {
-          cost?: number
+          completion_tokens?: number | null
           created_at?: string
           error?: Json | null
           id?: string
-          request?: Json
+          prompt_tokens?: number | null
+          request?: Json | null
           response?: Json | null
           version_id?: string | null
           workspace_id?: string
