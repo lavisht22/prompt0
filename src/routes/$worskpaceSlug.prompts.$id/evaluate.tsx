@@ -27,8 +27,7 @@ import { FormValues } from "routes/$worskpaceSlug.prompts.$id/prompt";
 import { AssistantMessageSchema } from "./components/assistant-message";
 import { stream } from "fetch-event-stream";
 import useWorkspacesStore from "stores/workspaces";
-import { ResponseDelta } from "./types";
-
+import OpenAI from "openai";
 type Evaluation = {
   id: string;
   version_id: string;
@@ -172,26 +171,30 @@ export default function Evaluate({
             continue;
           }
 
-          const data = JSON.parse(event.data) as ResponseDelta;
+          const data = JSON.parse(
+            event.data
+          ) as OpenAI.Chat.Completions.ChatCompletionChunk;
 
-          if (!data.delta) {
+          if (data.choices.length === 0) {
             continue;
           }
 
-          if (data.delta.content) {
+          const delta = data.choices[0].delta;
+
+          if (delta.content) {
             if (!responseCp.content) {
               responseCp.content = "";
             }
 
-            responseCp.content += data.delta.content;
+            responseCp.content += delta.content;
           }
 
-          if (data.delta.tool_calls && data.delta.tool_calls.length > 0) {
+          if (delta.tool_calls && delta.tool_calls.length > 0) {
             if (!responseCp.tool_calls) {
               responseCp.tool_calls = [];
             }
 
-            data.delta.tool_calls.forEach((tc) => {
+            delta.tool_calls.forEach((tc) => {
               const prevIndex = responseCp.tool_calls?.findIndex(
                 (t) => t.index === tc.index
               );
@@ -202,13 +205,13 @@ export default function Evaluate({
                   id: tc.id ?? "",
                   type: tc.type ?? "function",
                   function: {
-                    name: tc.function.name ?? "",
-                    arguments: tc.function.arguments,
+                    name: tc.function?.name ?? "",
+                    arguments: tc.function?.arguments ?? "",
                   },
                 });
               } else {
                 responseCp.tool_calls![prevIndex].function.arguments +=
-                  tc.function.arguments;
+                  tc.function?.arguments ?? "";
               }
             });
           }
