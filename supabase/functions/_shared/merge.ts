@@ -1,4 +1,4 @@
-import { OpenAI } from "https://esm.sh/openai@4.79.4";
+import { OpenAI } from "https://esm.sh/openai@4.81.0";
 
 export function mergeChunks(
     chunks: OpenAI.Chat.Completions.ChatCompletionChunk[],

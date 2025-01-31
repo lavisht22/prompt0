@@ -380,6 +380,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_daily_stats: {
+        Args: {
+          days: number
+        }
+        Returns: {
+          day: string
+          prompt_tokens: number
+          completion_tokens: number
+          count: number
+          errors: number
+        }[]
+      }
       is_prompt_admin: {
         Args: {
           user_id: string

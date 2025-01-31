@@ -1,4 +1,4 @@
-import { OpenAI } from "https://esm.sh/openai@4.56.0";
+import { OpenAI } from "https://esm.sh/openai@4.81.0";
 
 export type ChatResponse = {
     id: string;

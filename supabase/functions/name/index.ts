@@ -1,5 +1,5 @@
 import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
-import { OpenAI } from "https://esm.sh/openai@4.56.0";
+import { OpenAI } from "https://esm.sh/openai@4.81.0";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),

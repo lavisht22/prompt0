@@ -5,37 +5,46 @@ import WorkspaceSelector from "./workspace-selector";
 import useWorkspacesStore from "stores/workspaces";
 import UserMenu from "./user-menu";
 import {
+  LuBarChart2,
   LuFileTerminal,
   LuMessageCircle,
   LuPanelLeftClose,
   LuPanelLeftOpen,
   LuServer,
 } from "react-icons/lu";
-import { useEffect, useState } from "react";
-
-const LINKS = [
-  {
-    name: "Prompts",
-    to: "prompts",
-    icon: <LuMessageCircle className="size-5" />,
-  },
-  {
-    name: "Providers",
-    to: "providers",
-    icon: <LuServer className="size-5" />,
-  },
-  {
-    name: "Logs",
-    to: "logs",
-    icon: <LuFileTerminal className="size-5" />,
-  },
-];
+import { useEffect, useMemo, useState } from "react";
 
 export default function Sidebar() {
   const { activeWorkspace } = useWorkspacesStore();
   const { pathname } = useLocation();
 
   const [collapsed, setCollapsed] = useState(false);
+
+  const links = useMemo(
+    () => [
+      {
+        name: "Dashboard",
+        to: `/${activeWorkspace?.slug}`,
+        icon: <LuBarChart2 className="size-5" />,
+      },
+      {
+        name: "Prompts",
+        to: `/${activeWorkspace?.slug}/prompts`,
+        icon: <LuMessageCircle className="size-5" />,
+      },
+      {
+        name: "Providers",
+        to: `/${activeWorkspace?.slug}/providers`,
+        icon: <LuServer className="size-5" />,
+      },
+      {
+        name: "Logs",
+        to: `/${activeWorkspace?.slug}/logs`,
+        icon: <LuFileTerminal className="size-5" />,
+      },
+    ],
+    [activeWorkspace]
+  );
 
   useEffect(() => {
     const collapsed = localStorage.getItem("sidebar-collapsed");
@@ -73,10 +82,8 @@ export default function Sidebar() {
             {collapsed ? null : "Collapse"}
           </Button>
 
-          {LINKS.map((link) => {
-            const isActive = pathname.startsWith(
-              `/${activeWorkspace?.slug}/${link.to}`
-            );
+          {links.map((link) => {
+            const isActive = pathname === link.to;
 
             if (collapsed) {
               return (
@@ -84,7 +91,7 @@ export default function Sidebar() {
                   key={link.to}
                   isIconOnly
                   variant={isActive ? "flat" : "light"}
-                  href={`/${activeWorkspace?.slug}/${link.to}`}
+                  href={link.to}
                   as={Link}
                   startContent={link.icon}
                 />
@@ -97,7 +104,7 @@ export default function Sidebar() {
                 fullWidth
                 variant={isActive ? "flat" : "light"}
                 className="animate-appearance-in delay-300 justify-start px-2"
-                href={`/${activeWorkspace?.slug}/${link.to}`}
+                href={link.to}
                 as={Link}
                 startContent={link.icon}
               >

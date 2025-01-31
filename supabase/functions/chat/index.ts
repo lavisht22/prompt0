@@ -1,4 +1,4 @@
-import { OpenAI } from "https://esm.sh/openai@4.57.0";
+import { OpenAI } from "https://esm.sh/openai@4.81.0";
 
 import { generate, Version } from "../_shared/generate.ts";
 import { ErrorResponse, SuccessResponse } from "../_shared/response.ts";
