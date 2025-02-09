@@ -11,6 +11,7 @@ import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import { z } from "zod";
 import AzureOpenAIForm, { AzureOpenAIFormSchema } from "./azure-openai-form";
+import BedrockForm, { BedrockFormSchema } from "./bedrock-form";
 
 // Functions to mask the key with leving first 4 and last 4 characters
 function maskKey(key: string) {
@@ -20,13 +21,14 @@ function maskKey(key: string) {
 const FormSchema = z
   .object({
     name: z.string().min(1),
-    type: z.enum(["openai", "anthropic", "azure-openai"]),
+    type: z.enum(["openai", "anthropic", "azure-openai", "bedrock"]),
     key: z.string().min(1),
     options: z.record(z.any()),
   })
   .superRefine((data, ctx) => {
     const OptionsSchemas = {
       "azure-openai": AzureOpenAIFormSchema,
+      bedrock: BedrockFormSchema,
     };
 
     const OptionsSchema =
@@ -167,7 +169,8 @@ export default function ProviderDetailsPage() {
         }
 
         setSaving(true);
-      } catch {
+      } catch (error) {
+        console.error(error);
         toast.error("Oops! Something went wrong.");
       } finally {
         setSaving(false);
@@ -252,6 +255,13 @@ export default function ProviderDetailsPage() {
                   >
                     OpenAI
                   </SelectItem>
+                  <SelectItem
+                    key="bedrock"
+                    value="bedrock"
+                    startContent={<ProviderIcon type="bedrock" />}
+                  >
+                    Bedrock
+                  </SelectItem>
                 </Select>
               )}
             />
@@ -262,7 +272,7 @@ export default function ProviderDetailsPage() {
                 <Input
                   isRequired
                   fullWidth
-                  label="API Key"
+                  label="API Key / Secret Access Key"
                   value={field.value}
                   onValueChange={field.onChange}
                   isInvalid={fieldState.invalid}
@@ -273,6 +283,7 @@ export default function ProviderDetailsPage() {
             {watch().type === "azure-openai" && (
               <AzureOpenAIForm control={control} />
             )}
+            {watch().type === "bedrock" && <BedrockForm control={control} />}
           </div>
         </div>
       </form>

@@ -157,6 +157,13 @@ export async function generate(
     headers["x-portkey-azure-api-version"] = "2024-08-01-preview";
   }
 
+  if (version.providers.type === "bedrock") {
+    headers["x-portkey-aws-region"] = version.providers.options.region;
+    headers["x-portkey-aws-access-key-id"] =
+      version.providers.options.accessKeyId;
+    headers["x-portkey-aws-secret-access-key"] = version.providers.keys.value;
+  }
+
   const client = new OpenAI({
     baseURL: "https://rubeus.lavisht22.workers.dev/v1",
     apiKey: version.providers.keys.value,
@@ -266,70 +273,3 @@ export async function generate(
     return ErrorResponse(errorResponse.message);
   }
 }
-
-"use client";
-
-import { BarChart } from "@/components/BarChart";
-
-const chartdata = [
-  {
-    date: "Jan 23",
-    SolarPanels: 2890,
-    Inverters: 2338,
-  },
-  {
-    date: "Feb 23",
-    SolarPanels: 2756,
-    Inverters: 2103,
-  },
-  {
-    date: "Mar 23",
-    SolarPanels: 3322,
-    Inverters: 2194,
-  },
-  {
-    date: "Apr 23",
-    SolarPanels: 3470,
-    Inverters: 2108,
-  },
-  {
-    date: "May 23",
-    SolarPanels: 3475,
-    Inverters: 1812,
-  },
-  {
-    date: "Jun 23",
-    SolarPanels: 3129,
-    Inverters: 1726,
-  },
-  {
-    date: "Jul 23",
-    SolarPanels: 3490,
-    Inverters: 1982,
-  },
-  {
-    date: "Aug 23",
-    SolarPanels: 2903,
-    Inverters: 2012,
-  },
-  {
-    date: "Sep 23",
-    SolarPanels: 2643,
-    Inverters: 2342,
-  },
-  {
-    date: "Oct 23",
-    SolarPanels: 2837,
-    Inverters: 2473,
-  },
-  {
-    date: "Nov 23",
-    SolarPanels: 2954,
-    Inverters: 3848,
-  },
-  {
-    date: "Dec 23",
-    SolarPanels: 3239,
-    Inverters: 3736,
-  },
-];

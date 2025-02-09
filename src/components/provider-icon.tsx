@@ -1,3 +1,4 @@
+import { LiaAws } from "react-icons/lia";
 import {
   SiAnthropic,
   SiOpenai,
@@ -22,6 +23,10 @@ export default function ProviderIcon({
 
   if (type === "azure-openai") {
     return <SiMicrosoftazure className={className} />;
+  }
+
+  if (type === "bedrock") {
+    return <LiaAws className={className} />;
   }
 
   return <SiConventionalcommits className={className} />;
