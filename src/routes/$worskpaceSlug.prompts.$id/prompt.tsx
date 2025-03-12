@@ -28,7 +28,14 @@ import SystemMessage, {
   SystemMessageSchema,
 } from "./components/system-message";
 import UserMessage, { UserMessageSchema } from "./components/user-message";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
@@ -116,7 +123,7 @@ export default function Prompt({
   setName: (name: string) => void;
   versions: Version[];
   activeVersionId: string | null;
-  setVersions: (versions: Version[]) => void;
+  setVersions: Dispatch<SetStateAction<Version[]>>;
   setActiveVersionId: (activeVersionId: string | null) => void;
   setDirty: (dirty: boolean) => void;
 }) {

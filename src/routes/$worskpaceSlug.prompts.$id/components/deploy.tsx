@@ -6,7 +6,13 @@ import {
   PopoverContent,
 } from "@nextui-org/react";
 import { Version } from "../route";
-import { useCallback, useState, useMemo } from "react";
+import {
+  useCallback,
+  useState,
+  useMemo,
+  Dispatch,
+  SetStateAction,
+} from "react";
 import toast from "react-hot-toast";
 import supabase from "utils/supabase";
 import { LuCheckCircle, LuRocket, LuAlertCircle } from "react-icons/lu";
@@ -20,7 +26,7 @@ export default function Deploy({
   isDirty: boolean;
   activeVersionId: string | null;
   versions: Version[];
-  setVersions: (versions: Version[]) => void;
+  setVersions: Dispatch<SetStateAction<Version[]>>;
 }) {
   const { isOpen, onOpenChange, onClose } = useDisclosure();
 
@@ -32,11 +38,9 @@ export default function Deploy({
 
   const deploy = useCallback(async () => {
     try {
-      if (versions.length === 0) {
+      if (!activeVersion) {
         return;
       }
-
-      const version = versions[0];
 
       setLoading(true);
 
@@ -44,21 +48,22 @@ export default function Deploy({
       await supabase
         .from("versions")
         .update({ published_at: null })
-        .eq("prompt_id", version.prompt_id)
+        .eq("prompt_id", activeVersion.prompt_id)
         .throwOnError();
 
       // Deploy the current version
       await supabase
         .from("versions")
         .update({ published_at: new Date().toISOString() })
-        .eq("id", version.id)
+        .eq("id", activeVersion.id)
         .throwOnError();
 
       // Update versions
-      setVersions(
-        versions.map((v) => ({
+      setVersions((prev) =>
+        prev.map((v) => ({
           ...v,
-          published_at: v.id === version.id ? new Date().toISOString() : null,
+          published_at:
+            v.id === activeVersion.id ? new Date().toISOString() : null,
         }))
       );
 
@@ -68,7 +73,7 @@ export default function Deploy({
     } finally {
       setLoading(false);
     }
-  }, [onClose, setVersions, versions]);
+  }, [activeVersion, setVersions, onClose]);
 
   return (
     <Popover
