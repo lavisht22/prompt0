@@ -164,7 +164,10 @@ export async function generate(
     headers["x-portkey-aws-secret-access-key"] = version.providers.keys.value;
   }
 
-  if (version.providers.options.baseUrl) {
+  if (
+    typeof version.providers.options.baseUrl === "string" &&
+    version.providers.options.baseUrl.length > 0
+  ) {
     headers["x-portkey-custom-host"] = version.providers.options.baseUrl;
   }
 
