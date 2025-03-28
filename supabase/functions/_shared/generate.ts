@@ -164,6 +164,10 @@ export async function generate(
     headers["x-portkey-aws-secret-access-key"] = version.providers.keys.value;
   }
 
+  if (version.providers.options.baseUrl) {
+    headers["x-portkey-custom-host"] = version.providers.options.baseUrl;
+  }
+
   const client = new OpenAI({
     baseURL: "https://rubeus.lavisht22.workers.dev/v1",
     apiKey: version.providers.keys.value,

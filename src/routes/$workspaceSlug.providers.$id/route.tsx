@@ -12,6 +12,7 @@ import supabase from "utils/supabase";
 import { z } from "zod";
 import AzureOpenAIForm, { AzureOpenAIFormSchema } from "./azure-openai-form";
 import BedrockForm, { BedrockFormSchema } from "./bedrock-form";
+import OpenAIForm from "./openai-form";
 
 // Functions to mask the key with leving first 4 and last 4 characters
 function maskKey(key: string) {
@@ -279,6 +280,8 @@ export default function ProviderDetailsPage() {
                 />
               )}
             />
+
+            {watch().type === "openai" && <OpenAIForm control={control} />}
 
             {watch().type === "azure-openai" && (
               <AzureOpenAIForm control={control} />
