@@ -232,6 +232,7 @@ export type Database = {
           created_at: string
           id: string
           key: string
+          models: Json
           name: string
           options: Json
           type: string
@@ -243,6 +244,7 @@ export type Database = {
           created_at?: string
           id?: string
           key: string
+          models?: Json
           name: string
           options?: Json
           type: string
@@ -254,6 +256,7 @@ export type Database = {
           created_at?: string
           id?: string
           key?: string
+          models?: Json
           name?: string
           options?: Json
           type?: string

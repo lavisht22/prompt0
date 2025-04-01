@@ -14,10 +14,8 @@ export default function OpenAIForm({
   control: Control<FormValues>;
 }) {
   return (
-    <>
-      <h5 className="mt-8 text-sm font-medium text-default-500">
-        OpenAI Options
-      </h5>
+    <div className="flex flex-col w-full gap-4">
+      <h5 className="text-sm font-medium text-default-500">OpenAI Options</h5>
       <Controller
         control={control}
         name="options.baseUrl"
@@ -31,6 +29,6 @@ export default function OpenAIForm({
           />
         )}
       />
-    </>
+    </div>
   );
 }

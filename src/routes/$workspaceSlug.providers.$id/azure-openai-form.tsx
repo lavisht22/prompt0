@@ -16,8 +16,8 @@ export default function AzureOpenAIForm({
   control: Control<FormValues>;
 }) {
   return (
-    <>
-      <h5 className="mt-8 text-sm font-medium text-default-500">
+    <div className="flex flex-col w-full gap-4">
+      <h5 className="text-sm font-medium text-default-500">
         Azure OpenAI Options
       </h5>
       <Controller
@@ -59,6 +59,6 @@ export default function AzureOpenAIForm({
           />
         )}
       />
-    </>
+    </div>
   );
 }

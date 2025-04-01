@@ -1,5 +1,5 @@
-import { Input, Select, SelectItem, Slider, Switch } from "@nextui-org/react";
-import { useEffect, useState } from "react";
+import { Select, SelectItem, Slider, Switch } from "@nextui-org/react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useWatch, useFormContext } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
 import { FormValues } from "../prompt";
@@ -11,6 +11,10 @@ type Provider = {
   id: string;
   type: string;
   name: string;
+  models: {
+    label: string;
+    value: string;
+  }[];
 };
 
 export default function Params() {
@@ -27,14 +31,14 @@ export default function Params() {
 
       const { data: providers, error: providersReadError } = await supabase
         .from("providers")
-        .select("id, type, name")
+        .select("id, type, name, models")
         .eq("workspace_id", activeWorkspace.id);
 
       if (providersReadError) {
         throw providersReadError;
       }
 
-      setProviders(providers);
+      setProviders(providers as Provider[]);
     };
 
     init();
@@ -44,6 +48,21 @@ export default function Params() {
     control,
     name: "tools",
   });
+
+  const provider_id = useWatch({ control, name: "provider_id" });
+
+  const modelOptions = useMemo(() => {
+    const provider = providers.find((provider) => provider.id === provider_id);
+
+    if (!provider) {
+      return [];
+    }
+
+    return provider.models.map((model) => ({
+      label: model.label,
+      key: model.value,
+    }));
+  }, [providers, provider_id]);
 
   useEffect(() => {
     if (!tools || tools.length === 0) {
@@ -93,14 +112,36 @@ export default function Params() {
         name="model"
         control={control}
         render={({ field, fieldState }) => (
-          <Input
+          <Select
             variant="bordered"
             size="sm"
             label="Model"
             placeholder="Model"
-            {...field}
+            // inputValue={field.value}
+            // onValueChange={(value) => {
+            //   field.onChange(value);
+            // }}
+
+            multiple={false}
+            selectedKeys={field.value ? new Set([field.value]) : undefined}
+            onSelectionChange={(selectedKeys) => {
+              const arr = Array.from(selectedKeys);
+
+              console.log(arr);
+
+              field.onChange(arr[0]);
+            }}
             isInvalid={fieldState.invalid}
-          />
+          >
+            {modelOptions.map((item) => (
+              <SelectItem key={item.key} textValue={item.key}>
+                <span className="block">{item.label}</span>
+                <span className="block text-xs text-default-500">
+                  {item.key}
+                </span>
+              </SelectItem>
+            ))}
+          </Select>
         )}
       />
 

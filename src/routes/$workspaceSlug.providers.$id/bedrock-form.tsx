@@ -15,10 +15,8 @@ export default function BedrockForm({
   control: Control<FormValues>;
 }) {
   return (
-    <>
-      <h5 className="mt-8 text-sm font-medium text-default-500">
-        Bedrock Options
-      </h5>
+    <div className="flex flex-col w-full gap-4">
+      <h5 className="text-sm font-medium text-default-500">Bedrock Options</h5>
       <Controller
         control={control}
         name="options.region"
@@ -50,6 +48,6 @@ export default function BedrockForm({
         <span className="font-medium">API Key / Secret Access Key</span> field
         to store secret access key securely.
       </p>
-    </>
+    </div>
   );
 }
