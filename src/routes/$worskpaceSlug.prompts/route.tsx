@@ -2,12 +2,12 @@ import { Button, Input } from "@nextui-org/react";
 import { useCallback, useEffect } from "react";
 import toast from "react-hot-toast";
 import { LuPlus, LuSearch } from "react-icons/lu";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import usePromptsStore from "stores/prompts";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import EmptyList from "components/empty-list";
-import { formatDistanceToNow } from "date-fns";
+import ProjectSelector from "components/project-selector";
 
 export default function PromptsPage() {
   const { activeWorkspace } = useWorkspacesStore();
@@ -22,7 +22,7 @@ export default function PromptsPage() {
 
       const { data, error } = await supabase
         .from("prompts")
-        .select("id, name, user_id, updated_at")
+        .select("id, name, user_id, updated_at, project_id")
         .eq("workspace_id", activeWorkspace.id)
         .order("updated_at", { ascending: false });
 
@@ -82,20 +82,30 @@ export default function PromptsPage() {
           />
 
           {prompts.map((prompt) => (
-            <Link
+            <div
               key={prompt.id}
-              to={`/${activeWorkspace?.slug}/prompts/${prompt.id}`}
               className="w-full flex flex-row justify-between items-center px-4 py-4 cursor-default hover:bg-default-100"
+              onClick={() =>
+                navigate(`/${activeWorkspace?.slug}/prompts/${prompt.id}`)
+              }
             >
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col gap-2">
                 <h4 className="text-sm">{prompt.name}</h4>
               </div>
               <div>
-                <span className="block text-xs text-default-500">
-                  {formatDistanceToNow(new Date(prompt.updated_at))}
-                </span>
+                <ProjectSelector
+                  promptId={prompt.id}
+                  value={prompt.project_id}
+                  onValueChange={(projectId) => {
+                    setPrompts(
+                      prompts.map((p) =>
+                        p.id === prompt.id ? { ...p, project_id: projectId } : p
+                      )
+                    );
+                  }}
+                />
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
