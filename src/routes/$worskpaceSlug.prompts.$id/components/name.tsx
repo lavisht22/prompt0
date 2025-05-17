@@ -58,7 +58,7 @@ export default function Name({
       <Button
         variant="light"
         size="sm"
-        className="text-base font-normal"
+        className="font-normal text-base px-1"
         onPress={onOpen}
       >
         {value === "" ? (

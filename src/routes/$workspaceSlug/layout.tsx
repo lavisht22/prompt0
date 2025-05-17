@@ -7,6 +7,8 @@ import toast from "react-hot-toast";
 import SplashScreen from "components/splash-screen";
 import useWorkspacesStore from "stores/workspaces";
 import { useAuth } from "contexts/auth-context";
+import supabase from "utils/supabase";
+import useProjectsStore from "stores/projects";
 
 export default function WorkspaceLayout() {
   const { user, updateUserMetadata } = useAuth();
@@ -14,6 +16,7 @@ export default function WorkspaceLayout() {
 
   const { workspaces, activeWorkspace, setActiveWorkspace } =
     useWorkspacesStore();
+  const { setProjects } = useProjectsStore();
 
   useEffect(() => {
     try {
@@ -37,6 +40,26 @@ export default function WorkspaceLayout() {
       toast.error("Oops! Something went wrong.");
     }
   }, [setActiveWorkspace, updateUserMetadata, user, workspaceSlug, workspaces]);
+
+  useEffect(() => {
+    const loadProjects = async () => {
+      if (!activeWorkspace) return;
+
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("workspace_id", activeWorkspace.id);
+
+      if (error) {
+        throw error;
+      }
+      <s></s>;
+
+      setProjects(data);
+    };
+
+    loadProjects();
+  }, [activeWorkspace, setProjects]);
 
   if (!activeWorkspace) {
     return <SplashScreen loading />;

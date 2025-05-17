@@ -25,14 +25,8 @@ export default function History({
 
   return (
     <>
-      <Button
-        size="sm"
-        isIconOnly
-        onPress={onOpen}
-        variant="flat"
-        className="h-6"
-      >
-        <span className="text-xs font-bold">
+      <Button size="sm" isIconOnly onPress={onOpen} variant="flat">
+        <span className="text-xs font-medium">
           v{versions.find((v) => v.id === activeVersionId)?.number}
         </span>
       </Button>

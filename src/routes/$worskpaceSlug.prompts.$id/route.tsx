@@ -11,6 +11,7 @@ import Prompt from "./prompt";
 import Evaluate from "./evaluate";
 import Menu from "./components/menu";
 import History from "./components/history";
+import ProjectSelector from "components/project-selector";
 
 export type Version = Database["public"]["Tables"]["versions"]["Row"];
 
@@ -20,6 +21,7 @@ export default function PromptDetailsPage() {
 
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
+  const [projectId, setProjectId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("prompt");
   const [versions, setVersions] = useState<Version[]>([]);
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export default function PromptDetailsPage() {
         }
 
         setName(prompt.name);
+        setProjectId(prompt.project_id);
 
         const { data: versions, error: versionsReadError } = await supabase
           .from("versions")
@@ -85,8 +88,13 @@ export default function PromptDetailsPage() {
   return (
     <div className="h-full flex flex-col relative">
       <div className="flex justify-between items-center bg-background px-3 h-12 border-b relative">
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
           <Name value={name} onValueChange={setName} promptId={promptId} />
+          <ProjectSelector
+            promptId={promptId}
+            value={projectId}
+            onValueChange={setProjectId}
+          />
 
           <History
             versions={versions}
@@ -95,7 +103,7 @@ export default function PromptDetailsPage() {
           />
 
           {dirty && (
-            <div className="bg-default-100 text-default-600 rounded-lg px-2 py-1 flex justify-center items-center">
+            <div className="bg-warning-200 text-default-600 rounded-lg px-2 py-1 flex justify-center items-center">
               <span className="text-xs font-bold">UNSAVED</span>
             </div>
           )}
