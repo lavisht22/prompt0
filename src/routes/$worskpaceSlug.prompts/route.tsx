@@ -21,6 +21,7 @@ export default function PromptsPage() {
   const { projects } = useProjectsStore();
   const navigate = useNavigate();
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -49,11 +50,22 @@ export default function PromptsPage() {
   }, [load]);
 
   const filteredPrompts = useMemo(() => {
-    if (!projectFilter) {
-      return prompts;
+    let tempPrompts = prompts;
+
+    if (projectFilter) {
+      tempPrompts = tempPrompts.filter(
+        (prompt) => prompt.project_id === projectFilter
+      );
     }
-    return prompts.filter((prompt) => prompt.project_id === projectFilter);
-  }, [prompts, projectFilter]);
+
+    if (searchQuery) {
+      tempPrompts = tempPrompts.filter((prompt) =>
+        prompt.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return tempPrompts;
+  }, [prompts, projectFilter, searchQuery]);
 
   const create = useCallback(() => {
     navigate("create");
@@ -92,6 +104,8 @@ export default function PromptsPage() {
               aria-label="Search"
               startContent={<LuSearch />}
               placeholder="Search"
+              value={searchQuery}
+              onValueChange={setSearchQuery}
             />
 
             <Autocomplete
