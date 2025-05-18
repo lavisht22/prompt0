@@ -31,7 +31,7 @@ export default function PromptsPage() {
 
       const { data, error } = await supabase
         .from("prompts")
-        .select("id, name, user_id, updated_at, project_id")
+        .select("id, name, user_id, updated_at, project_id, number")
         .eq("workspace_id", activeWorkspace.id)
         .order("updated_at", { ascending: false });
 
@@ -140,7 +140,10 @@ export default function PromptsPage() {
                 navigate(`/${activeWorkspace?.slug}/prompts/${prompt.id}`)
               }
             >
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
+                <span className="block text-xs text-default-500 font-medium">{`${activeWorkspace?.name
+                  .slice(0, 3)
+                  .toLocaleUpperCase()}-${prompt.number}`}</span>
                 <h4 className="text-sm">{prompt.name}</h4>
               </div>
               <div>

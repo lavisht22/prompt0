@@ -6,6 +6,7 @@ export type Prompt = {
     user_id: string;
     updated_at: string;
     project_id: string | null;
+    number: number;
 };
 
 interface PromptsState {
