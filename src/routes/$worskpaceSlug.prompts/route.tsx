@@ -3,6 +3,8 @@ import {
   Input,
   Autocomplete,
   AutocompleteItem,
+  Avatar,
+  Tooltip,
 } from "@nextui-org/react";
 import { useCallback, useEffect, useState, useMemo, Key } from "react";
 import toast from "react-hot-toast";
@@ -16,7 +18,7 @@ import EmptyList from "components/empty-list";
 import ProjectSelector from "components/project-selector";
 
 export default function PromptsPage() {
-  const { activeWorkspace } = useWorkspacesStore();
+  const { activeWorkspace, workspaceUsers } = useWorkspacesStore();
   const { prompts, setPrompts } = usePromptsStore();
   const { projects } = useProjectsStore();
   const navigate = useNavigate();
@@ -132,35 +134,56 @@ export default function PromptsPage() {
             </Autocomplete>
           </div>
 
-          {filteredPrompts.map((prompt) => (
-            <div
-              key={prompt.id}
-              className="w-full flex flex-row justify-between items-center px-4 py-4 cursor-default hover:bg-default-100"
-              onClick={() =>
-                navigate(`/${activeWorkspace?.slug}/prompts/${prompt.id}`)
-              }
-            >
-              <div className="flex flex-col gap-1">
-                <span className="block text-xs text-default-500 font-medium">{`${activeWorkspace?.name
-                  .slice(0, 3)
-                  .toLocaleUpperCase()}-${prompt.number}`}</span>
-                <h4 className="text-sm">{prompt.name}</h4>
+          {filteredPrompts.map((prompt) => {
+            const workspaceUser = workspaceUsers.find(
+              (user) => user.user_id === prompt.user_id
+            );
+
+            return (
+              <div
+                key={prompt.id}
+                className="w-full flex flex-row justify-between items-center px-4 py-4 cursor-default hover:bg-default-100 scrollbar-hide"
+                onClick={() =>
+                  navigate(`/${activeWorkspace?.slug}/prompts/${prompt.id}`)
+                }
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="block text-xs text-default-500 font-medium">{`${activeWorkspace?.name
+                    .slice(0, 3)
+                    .toLocaleUpperCase()}-${prompt.number}`}</span>
+                  <h4 className="text-sm">{prompt.name}</h4>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ProjectSelector
+                      promptId={prompt.id}
+                      value={prompt.project_id}
+                      onValueChange={(projectId) => {
+                        setPrompts(
+                          prompts.map((p) =>
+                            p.id === prompt.id
+                              ? { ...p, project_id: projectId }
+                              : p
+                          )
+                        );
+                      }}
+                    />
+                    <Tooltip
+                      placement="left"
+                      classNames={{ content: "text-xs text-default-500" }}
+                      content={`Created by ${workspaceUser?.email}`}
+                    >
+                      <Avatar
+                        className="h-5 w-5"
+                        name={workspaceUser?.email[0].toUpperCase()}
+                        src={`https://api.dicebear.com/9.x/initials/svg?seed=${workspaceUser?.email}`}
+                      />
+                    </Tooltip>
+                  </div>
+                </div>
               </div>
-              <div>
-                <ProjectSelector
-                  promptId={prompt.id}
-                  value={prompt.project_id}
-                  onValueChange={(projectId) => {
-                    setPrompts(
-                      prompts.map((p) =>
-                        p.id === prompt.id ? { ...p, project_id: projectId } : p
-                      )
-                    );
-                  }}
-                />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

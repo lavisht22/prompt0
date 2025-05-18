@@ -14,7 +14,7 @@ export default function WorkspaceLayout() {
   const { user, updateUserMetadata } = useAuth();
   const { workspaceSlug } = useParams<{ workspaceSlug: string }>();
 
-  const { workspaces, activeWorkspace, setActiveWorkspace } =
+  const { workspaces, activeWorkspace, setActiveWorkspace, setWorkspaceUsers } =
     useWorkspacesStore();
   const { setProjects } = useProjectsStore();
 
@@ -60,6 +60,24 @@ export default function WorkspaceLayout() {
 
     loadProjects();
   }, [activeWorkspace, setProjects]);
+
+  useEffect(() => {
+    const loadWorkspaceUsers = async () => {
+      if (!activeWorkspace) return;
+
+      const { data, error } = await supabase.rpc("get_users_in_workspace", {
+        workspace_id: activeWorkspace.id,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setWorkspaceUsers(data);
+    };
+
+    loadWorkspaceUsers();
+  }, [activeWorkspace, setWorkspaceUsers]);
 
   if (!activeWorkspace) {
     return <SplashScreen loading />;

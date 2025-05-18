@@ -180,14 +180,17 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          name: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          name: string
           user_id: string
         }
         Update: {
           created_at?: string
+          name?: string
           user_id?: string
         }
         Relationships: []
@@ -436,6 +439,15 @@ export type Database = {
           completion_tokens: number
           count: number
           errors: number
+        }[]
+      }
+      get_users_in_workspace: {
+        Args: { workspace_id: string }
+        Returns: {
+          user_id: string
+          role: Database["public"]["Enums"]["workspace_user_roles"]
+          email: string
+          name: string
         }[]
       }
       is_prompt_admin: {
