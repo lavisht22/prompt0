@@ -250,6 +250,37 @@ export default function Params() {
         )}
       />
 
+      <Controller
+        name="reasoning_effort"
+        control={control}
+        render={({ field, fieldState }) => (
+          <Select
+            variant="bordered"
+            size="sm"
+            label="Reasoning Effort"
+            aria-label="Reasoning Effort"
+            placeholder="Select reasoning effort"
+            isInvalid={fieldState.invalid}
+            selectedKeys={field.value ? new Set([field.value]) : new Set()}
+            onSelectionChange={(selectedKeys) => {
+              const arr = Array.from(selectedKeys);
+
+              if (arr.length === 0) {
+                field.onChange(undefined);
+              } else {
+                field.onChange(arr[0]);
+              }
+            }}
+            description="Only applicable for thinking models. Do not use this for non-thinking models as it will result in an error."
+          >
+            <SelectItem key="none">none</SelectItem>
+            <SelectItem key="low">low</SelectItem>
+            <SelectItem key="medium">medium</SelectItem>
+            <SelectItem key="high">high</SelectItem>
+          </Select>
+        )}
+      />
+
       {tools && tools.length > 0 ? (
         <>
           <Controller

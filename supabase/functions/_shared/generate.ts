@@ -189,6 +189,7 @@ export async function generate(
       | OpenAI.ResponseFormatText
       | OpenAI.ResponseFormatJSONObject
       | OpenAI.ResponseFormatJSONSchema;
+    reasoning_effort: OpenAI.Chat.ChatCompletionReasoningEffort;
   };
 
   params.messages = [

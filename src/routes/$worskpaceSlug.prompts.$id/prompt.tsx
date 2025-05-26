@@ -74,6 +74,7 @@ const FormSchema = z.object({
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),
   }),
+  reasoning_effort: z.enum(["none", "low", "medium", "high"]).optional(),
   tools: z.union([z.array(ToolSchema).min(1), z.undefined()]),
   tool_choice: z
     .union([
@@ -108,6 +109,7 @@ const defaultValues: FormValues = {
   tools: undefined,
   tool_choice: "auto",
   parallel_tool_calls: true,
+  reasoning_effort: undefined,
 };
 
 export default function Prompt({
@@ -316,6 +318,9 @@ export default function Prompt({
           max_tokens: values.max_tokens,
           temperature: values.temperature,
           response_format: values.response_format,
+          ...(values.reasoning_effort && {
+            reasoning_effort: values.reasoning_effort,
+          }),
         };
 
         setResponse({
@@ -475,6 +480,7 @@ export default function Prompt({
                 max_tokens: values.max_tokens,
                 temperature: values.temperature,
                 response_format: values.response_format,
+                reasoning_effort: values.reasoning_effort,
               },
             })
             .select()
@@ -547,6 +553,12 @@ export default function Prompt({
     name: "messages",
     control: methods.control,
   });
+
+  const reasoningEffort = methods.watch("reasoning_effort");
+
+  useEffect(() => {
+    console.log("reasoningEffort", reasoningEffort);
+  }, [reasoningEffort]);
 
   if (!promptId) {
     // TODO: Redirect to the prompts page
