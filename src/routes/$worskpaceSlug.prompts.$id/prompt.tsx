@@ -69,7 +69,7 @@ const FormSchema = z.object({
   messages: z.array(MessageSchema),
   model: z.string(),
   temperature: z.number().min(0).max(2),
-  max_tokens: z.number().min(1).max(4095),
+  max_tokens: z.number().min(1).max(16384),
   provider_id: z.string().uuid(),
   response_format: z.object({
     type: z.union([z.literal("json_object"), z.literal("text")]),

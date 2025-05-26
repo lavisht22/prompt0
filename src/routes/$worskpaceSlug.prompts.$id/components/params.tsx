@@ -1,11 +1,10 @@
-import { Select, SelectItem, Slider, Switch } from "@heroui/react";
+import { Input, Select, SelectItem, Slider, Switch } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useWatch, useFormContext } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
 import { FormValues } from "../prompt";
 import supabase from "utils/supabase";
 import { LuFunctionSquare } from "react-icons/lu";
-import { CollectionElement } from "@react-types/shared";
 
 type Provider = {
   id: string;
@@ -100,9 +99,7 @@ export default function Params() {
             }}
           >
             {providers.map((provider) => (
-              <SelectItem key={provider.id} value={provider.id}>
-                {provider.name}
-              </SelectItem>
+              <SelectItem key={provider.id}>{provider.name}</SelectItem>
             ))}
           </Select>
         )}
@@ -117,18 +114,10 @@ export default function Params() {
             size="sm"
             label="Model"
             placeholder="Model"
-            // inputValue={field.value}
-            // onValueChange={(value) => {
-            //   field.onChange(value);
-            // }}
-
             multiple={false}
             selectedKeys={field.value ? new Set([field.value]) : undefined}
             onSelectionChange={(selectedKeys) => {
               const arr = Array.from(selectedKeys);
-
-              console.log(arr);
-
               field.onChange(arr[0]);
             }}
             isInvalid={fieldState.invalid}
@@ -160,12 +149,8 @@ export default function Params() {
               field.onChange(arr[0]);
             }}
           >
-            <SelectItem key="text" value="text">
-              text
-            </SelectItem>
-            <SelectItem key="json_object" value="json_object">
-              json_object
-            </SelectItem>
+            <SelectItem key="text">text</SelectItem>
+            <SelectItem key="json_object">json_object</SelectItem>
           </Select>
         )}
       />
@@ -185,6 +170,35 @@ export default function Params() {
             step={0.01}
             value={field.value}
             onChange={field.onChange}
+            renderValue={() => {
+              return (
+                <Input
+                  className="w-16"
+                  size="sm"
+                  value={field.value === 0 ? "" : field.value.toString()}
+                  classNames={{
+                    input: "text-xs",
+                  }}
+                  variant="bordered"
+                  onValueChange={(newValue) => {
+                    try {
+                      if (newValue === "") {
+                        field.onChange(0);
+                        return;
+                      }
+
+                      const value = parseFloat(newValue);
+
+                      if (value && value >= 0 && value <= 2) {
+                        field.onChange(value);
+                      }
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
+                />
+              );
+            }}
           />
         )}
       />
@@ -200,9 +214,38 @@ export default function Params() {
               label: "text-xs",
             }}
             minValue={1}
-            maxValue={4095}
+            maxValue={16384}
             value={field.value}
             onChange={field.onChange}
+            renderValue={() => {
+              return (
+                <Input
+                  className="w-16"
+                  classNames={{
+                    input: "text-xs",
+                  }}
+                  variant="bordered"
+                  size="sm"
+                  value={field.value === 0 ? "" : field.value.toString()}
+                  onValueChange={(newValue) => {
+                    try {
+                      if (newValue === "") {
+                        field.onChange(0);
+                        return;
+                      }
+
+                      const value = parseInt(newValue);
+
+                      if (value && value > 0 && value <= 16384) {
+                        field.onChange(value);
+                      }
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
+                />
+              );
+            }}
           />
         )}
       />
@@ -255,26 +298,19 @@ export default function Params() {
                     }
                   }}
                 >
-                  <SelectItem key="none" value="none">
-                    none
-                  </SelectItem>
-                  <SelectItem key="auto" value="auto">
-                    auto
-                  </SelectItem>
-                  <SelectItem key="required" value="required">
-                    required
-                  </SelectItem>
-                  {
-                    tools.map((tool) => (
+                  <SelectItem key="none">none</SelectItem>
+                  <SelectItem key="auto">auto</SelectItem>
+                  <SelectItem key="required">required</SelectItem>
+                  <>
+                    {tools.map((tool) => (
                       <SelectItem
                         key={tool.function.name}
-                        value={tool.function.name}
                         startContent={<LuFunctionSquare />}
                       >
                         {tool.function.name}
                       </SelectItem>
-                    )) as unknown as CollectionElement<object>
-                  }
+                    ))}
+                  </>
                 </Select>
               );
             }}
