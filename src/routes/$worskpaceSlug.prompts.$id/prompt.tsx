@@ -9,7 +9,7 @@ import {
   DropdownMenu,
   DropdownTrigger,
   Kbd,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import {
   Controller,
   FormProvider,

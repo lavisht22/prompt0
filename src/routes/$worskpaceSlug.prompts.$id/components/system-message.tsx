@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, Chip, cn, Textarea } from "@nextui-org/react";
+import { Button, Card, CardBody, Chip, cn, Textarea } from "@heroui/react";
 import { LuInfo } from "react-icons/lu";
 import { z } from "zod";
 import VariablesList from "./variables-list";

@@ -1,4 +1,4 @@
-import { cn } from "@nextui-org/react";
+import { cn } from "@heroui/react";
 
 export default function Logo({ className }: { className?: string }) {
   return (

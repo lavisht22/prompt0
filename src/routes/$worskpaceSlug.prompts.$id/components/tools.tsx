@@ -1,4 +1,4 @@
-import { useDisclosure, Button } from "@nextui-org/react";
+import { useDisclosure, Button } from "@heroui/react";
 import { ToolDialog } from "./tool-dialog";
 import { LuPlus } from "react-icons/lu";
 import {

@@ -6,7 +6,7 @@ import {
   DrawerHeader,
   DrawerBody,
   DrawerFooter,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { LuPlay } from "react-icons/lu";
 import { FormValues } from "../prompt";
 import { useEffect, useState } from "react";

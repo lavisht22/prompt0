@@ -1,4 +1,4 @@
-import { Button } from "@nextui-org/react";
+import { Button } from "@heroui/react";
 import { useMemo } from "react";
 import { LuBraces } from "react-icons/lu";
 import { extractVariables } from "utils/variables";

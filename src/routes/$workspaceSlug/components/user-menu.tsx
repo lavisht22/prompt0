@@ -4,7 +4,7 @@ import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useAuth } from "contexts/auth-context";
 import { useCallback } from "react";
 import { LuChevronRight, LuLogOut, LuSettings2, LuUser } from "react-icons/lu";

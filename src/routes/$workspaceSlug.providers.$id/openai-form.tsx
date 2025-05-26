@@ -1,4 +1,4 @@
-import { Input } from "@nextui-org/react";
+import { Input } from "@heroui/react";
 import { Control, Controller } from "react-hook-form";
 import { z } from "zod";
 

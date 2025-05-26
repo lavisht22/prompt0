@@ -13,7 +13,7 @@ import {
   ModalHeader,
   Textarea,
   useDisclosure,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { LuBox, LuCircleDashed, LuPlus } from "react-icons/lu";
 import useProjectsStore from "stores/projects";
 import { useCallback, useState } from "react";

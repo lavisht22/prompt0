@@ -5,7 +5,7 @@ import {
   AutocompleteItem,
   Avatar,
   Tooltip,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useCallback, useEffect, useState, useMemo, Key } from "react";
 import toast from "react-hot-toast";
 import { LuPlus, LuSearch, LuBox } from "react-icons/lu";

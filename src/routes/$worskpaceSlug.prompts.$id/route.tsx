@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Name from "./components/name";
 import { useParams } from "react-router-dom";
-import { Tabs, Tab, Tooltip } from "@nextui-org/react";
+import { Tabs, Tab, Tooltip } from "@heroui/react";
 import useWorkspacesStore from "stores/workspaces";
 import supabase from "utils/supabase";
 import { Database } from "supabase/functions/types";

@@ -1,4 +1,4 @@
-import { Card, cn, useDisclosure } from "@nextui-org/react";
+import { Card, cn, useDisclosure } from "@heroui/react";
 import { LuFunctionSquare } from "react-icons/lu";
 import { z } from "zod";
 import { ToolDialog } from "./tool-dialog";

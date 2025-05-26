@@ -2,7 +2,7 @@ import { Key, useCallback, useEffect, useState, useRef, useMemo } from "react";
 import supabase from "utils/supabase";
 import toast from "react-hot-toast";
 import EmptyList from "components/empty-list";
-import { Button, Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import { Button, Autocomplete, AutocompleteItem } from "@heroui/react";
 import Log, { LogT } from "./component/log";
 import { LuCircleDot, LuMessageCircle, LuRefreshCw } from "react-icons/lu";
 import useWorkspacesStore from "stores/workspaces";

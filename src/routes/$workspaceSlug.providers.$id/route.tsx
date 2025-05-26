@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Input, Select, SelectItem } from "@nextui-org/react";
+import { Button, Input, Select, SelectItem } from "@heroui/react";
 import FullSpinner from "components/full-spinner";
 import ProviderIcon from "components/provider-icon";
 import { useCallback, useEffect, useState } from "react";

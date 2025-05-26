@@ -12,7 +12,7 @@ import {
   Spinner,
   Alert,
   Textarea,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { Version } from "./route";
 import { useMemo, useCallback, useState, useEffect } from "react";
 import supabase from "utils/supabase";

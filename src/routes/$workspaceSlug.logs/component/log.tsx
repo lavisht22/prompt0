@@ -1,4 +1,4 @@
-import { Button, cn } from "@nextui-org/react";
+import { Button, cn } from "@heroui/react";
 import { formatDistanceToNow } from "date-fns";
 import { useMemo, useState } from "react";
 import { BiCollapseVertical, BiExpandVertical } from "react-icons/bi";

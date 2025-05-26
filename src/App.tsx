@@ -12,7 +12,7 @@ import AppLayout from "./routes/(app)/layout";
 import PromptsPage from "./routes/$worskpaceSlug.prompts/route";
 import ProvidersPage from "./routes/$worskpaceSlug.providers/route";
 import { ThemeProvider } from "next-themes";
-import { NextUIProvider } from "@nextui-org/react";
+import { HeroUIProvider } from "@heroui/react";
 import AuthProvider from "contexts/auth-context";
 import LoginPage from "routes/login/route";
 import LoginLayout from "routes/login/layout";
@@ -29,14 +29,14 @@ const RootLayout = () => {
   const navigate = useNavigate();
 
   return (
-    <NextUIProvider navigate={navigate}>
+    <HeroUIProvider navigate={navigate}>
       <ThemeProvider attribute="class" defaultTheme="light">
         <AuthProvider>
           <Outlet />
           <Toaster />
         </AuthProvider>
       </ThemeProvider>
-    </NextUIProvider>
+    </HeroUIProvider>
   );
 };
 

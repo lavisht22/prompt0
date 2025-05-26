@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import supabase from "utils/supabase";
 import useWorkspacesStore from "stores/workspaces";
 import toast from "react-hot-toast";
-import { Button, Input } from "@nextui-org/react";
+import { Button, Input } from "@heroui/react";
 import { LuPlus, LuSearch } from "react-icons/lu";
 import ProviderIcon from "components/provider-icon";
 import { Link, useNavigate } from "react-router-dom";

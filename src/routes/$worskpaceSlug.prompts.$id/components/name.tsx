@@ -7,7 +7,7 @@ import {
   ModalFooter,
   useDisclosure,
   Input,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import supabase from "utils/supabase";

@@ -8,7 +8,7 @@ import {
   Radio,
   RadioGroup,
   Textarea,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { LuImagePlus, LuText, LuTrash2 } from "react-icons/lu";
 import { z } from "zod";
 import VariablesList from "./variables-list";

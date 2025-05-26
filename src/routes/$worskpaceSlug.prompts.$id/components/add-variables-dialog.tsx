@@ -6,7 +6,7 @@ import {
   Textarea,
   Button,
   ModalFooter,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { useState } from "react";
 import { LuPlus } from "react-icons/lu";
 

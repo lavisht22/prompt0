@@ -9,7 +9,7 @@ import {
   DropdownMenu,
   DropdownItem,
   Button,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { ToolSchema } from "./tool";
 import { z } from "zod";
 import { Editor } from "@monaco-editor/react";

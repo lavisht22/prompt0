@@ -1,4 +1,4 @@
-import { Button, Spinner } from "@nextui-org/react";
+import { Button, Spinner } from "@heroui/react";
 import { LuPlus } from "react-icons/lu";
 import { LuInbox } from "react-icons/lu";
 

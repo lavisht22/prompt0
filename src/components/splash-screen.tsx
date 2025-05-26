@@ -1,6 +1,6 @@
-import { Progress } from "@nextui-org/react";
+import { Progress } from "@heroui/react";
 import Logo from "./logo";
-import { Card, CardBody } from "@nextui-org/react";
+import { Card, CardBody } from "@heroui/react";
 import { LuAlertTriangle } from "react-icons/lu";
 
 type Props = {

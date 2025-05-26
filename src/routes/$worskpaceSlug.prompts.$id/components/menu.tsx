@@ -4,7 +4,7 @@ import {
   Button,
   DropdownMenu,
   DropdownItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import DeleteDialog from "./delete-dialog";
 import { useState } from "react";

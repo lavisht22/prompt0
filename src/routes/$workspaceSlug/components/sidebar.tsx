@@ -1,4 +1,4 @@
-import { Button, cn, Link } from "@nextui-org/react";
+import { Button, cn, Link } from "@heroui/react";
 import { useLocation } from "react-router-dom";
 
 import WorkspaceSelector from "./workspace-selector";

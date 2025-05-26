@@ -8,7 +8,7 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerBody,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { Version } from "../route";
 import { formatDistanceToNow } from "date-fns";
 

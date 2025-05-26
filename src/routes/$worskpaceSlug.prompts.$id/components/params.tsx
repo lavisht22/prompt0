@@ -1,4 +1,4 @@
-import { Select, SelectItem, Slider, Switch } from "@nextui-org/react";
+import { Select, SelectItem, Slider, Switch } from "@heroui/react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useWatch, useFormContext } from "react-hook-form";
 import useWorkspacesStore from "stores/workspaces";
