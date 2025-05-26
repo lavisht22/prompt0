@@ -179,6 +179,7 @@ export default function Params() {
                   classNames={{
                     input: "text-xs",
                   }}
+                  placeholder="0"
                   variant="bordered"
                   onValueChange={(newValue) => {
                     try {
@@ -224,6 +225,7 @@ export default function Params() {
                   classNames={{
                     input: "text-xs",
                   }}
+                  placeholder="1"
                   variant="bordered"
                   size="sm"
                   value={field.value === 0 ? "" : field.value.toString()}
