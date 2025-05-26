@@ -256,28 +256,24 @@ export default function ProviderDetailsPage() {
                   >
                     <SelectItem
                       key="anthropic"
-                      value="anthropic"
                       startContent={<ProviderIcon type="anthropic" />}
                     >
                       Anthropic
                     </SelectItem>
                     <SelectItem
                       key="azure-openai"
-                      value="azure-openai"
                       startContent={<ProviderIcon type="azure-openai" />}
                     >
                       Azure OpenAI
                     </SelectItem>
                     <SelectItem
                       key="openai"
-                      value="openai"
                       startContent={<ProviderIcon type="openai" />}
                     >
                       OpenAI
                     </SelectItem>
                     <SelectItem
                       key="bedrock"
-                      value="bedrock"
                       startContent={<ProviderIcon type="bedrock" />}
                     >
                       Bedrock

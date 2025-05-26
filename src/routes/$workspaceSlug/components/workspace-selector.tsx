@@ -84,7 +84,6 @@ export default function WorkspaceSelector({
               <ListboxItem
                 variant="flat"
                 key={workspace.id}
-                value={workspace.id}
                 className="w-full"
                 onPress={() => {
                   navigate(`/${workspace.slug}/prompts`);
